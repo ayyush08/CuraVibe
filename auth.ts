@@ -10,6 +10,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (!user || !account) return false
 
             const existingUser = await db.user.findUnique({
+                //@ts-ignore
                 where: { email: user.email }
             })
 
@@ -21,7 +22,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         image: user.image,
 
                         accounts: {
-
+                            // @ts-ignore
                             create: {
                                 type: account.type,
                                 provider: account.provider,
@@ -64,6 +65,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             tokenType: account.token_type,
                             scope: account.scope,
                             idToken: account.id_token,
+                            //@ts-ignore
                             sessionState: account.session_state,
                         },
                     });
@@ -71,11 +73,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }
             return true
         },
-        async jwt({ token }) {
+        async jwt({ token, user }) {
+
             if (!token.sub) return token; //sub is like userId
             const existingUser = await getUserById(token.sub)
 
-            if(!existingUser) return token
+            if (!existingUser) return token
 
             token.name = existingUser.name
             token.email = existingUser.email
@@ -83,18 +86,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
             return token
         },
-        async session({session,token}) { 
-            if(token.sub && session.user){
+        async session({ session, token }) {
+            if (token.sub && session.user) {
                 session.user.id = token.sub
             }
 
-            if(token.sub && session.user){
+            if (token.sub && session.user) {
                 session.user.role = token.role
             }
             return session
         },
     },
     secret: process.env.AUTH_SECRET,
+    session:{
+        strategy: "jwt"
+    },
     adapter: PrismaAdapter(db),
     ...authConfig
 })
