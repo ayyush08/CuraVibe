@@ -6,5 +6,4 @@ const globalFormPrisma = globalThis as unknown as {
 }
 
 export const db = globalFormPrisma.prisma || new PrismaClient();
-
 if(process.env.NODE_ENV !== 'production') globalFormPrisma.prisma = db;
