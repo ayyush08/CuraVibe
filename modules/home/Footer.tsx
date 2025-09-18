@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Github as LucideGithub } from "lucide-react";
+import { APP_NAME } from "@/lib/constants";
 
 
 
@@ -33,7 +34,7 @@ export function Footer() {
 
                 {/* Copyright Notice */}
                 <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                    &copy; {new Date().getFullYear()} Codesnippet. All rights reserved.
+                    &copy; {new Date().getFullYear()} {APP_NAME}. All rights reserved.
                 </p>
             </div>
         </footer>
