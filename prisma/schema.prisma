@@ -27,10 +27,13 @@ model User {
   image    String?
   accounts Account[]
   role     UserRole  @default(USER)
+  
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  // sessions  Session[]
+  myPlayground Playground[]
+  staredPlayground Starmark[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
@@ -53,13 +56,39 @@ model Account {
   @@index([userId])
 }
 
-// model Session {
-//   id           String   @id @default(cuid()) @map("_id")
-//   sessionToken String   @unique @map("session_token")
-//   userId       String   @map("user_id")
-//   expires      DateTime
-//   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum Templates {
+  REACT
+  NEXTJS
+  EXPRESS
+  VUE
+  HONO
+  ANGULAR
+}
 
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
+
+model Playground {
+  id String @id @default(cuid()) @map("_id")
+  title String
+  description String?
+  template Templates @default(REACT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  Starmark Starmark[]
+
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  //TODO: template files
+}
+
+model Starmark {
+  id String @id @default(cuid()) @map("_id")
+  userId String
+  playgroundId String
+  isMarked Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playground Playground @relation(fields: [playgroundId], references: [id], onDelete: Cascade)
+}
