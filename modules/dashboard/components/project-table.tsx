@@ -68,7 +68,8 @@ export default function ProjectTable({
     const [editData, setEditData] = useState<EditProjectData>({ title: "", description: "" })
     const [isLoading, setIsLoading] = useState(false)
     const [favoutrie, setFavourite] = useState(false)
-
+    console.log("projects", projects);
+    
     const handleEditClick = (project: Project) => {
         setSelectedProject(project)
         setEditData({ title: project.title, description: project.description })
