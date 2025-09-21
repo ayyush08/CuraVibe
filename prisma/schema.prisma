@@ -79,7 +79,7 @@ model Playground {
 
   userId String
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  //TODO: template files
+  templateFiles TemplateFile[]
 }
 
 model Starmark {
@@ -93,4 +93,14 @@ model Starmark {
   playground Playground @relation(fields: [playgroundId], references: [id], onDelete: Cascade)
 
   @@unique([userId, playgroundId]) // A user can only star a playground once
+}
+
+
+model TemplateFile{
+  id String @id @default(cuid()) @map("_id")
+  content Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  playgroundId String @unique //each playground/project has its own template files
+  playground Playground @relation(fields: [playgroundId], references: [id], onDelete: Cascade)  
 }
