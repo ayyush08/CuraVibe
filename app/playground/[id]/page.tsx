@@ -12,8 +12,10 @@ import { Button } from '@/components/ui/button'
 import { Bot, FileText, Save, Settings, X } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
 import PlaygroundEditor from '@/modules/playground/components/playground-editor'
+import { UseWebContainer } from '@/modules/webcontainers/hooks/useWebContainer'
+import WebContainerPreview from '@/modules/webcontainers/components/webcontainer-preview'
 
 const MainPlaygroundPage = () => {
     const { id } = useParams<{ id: string }>()
@@ -34,6 +36,14 @@ const MainPlaygroundPage = () => {
         openFiles,
     } = useFileExplorer();
 
+    const {
+        serverUrl,
+        isLoading: containerLoading,
+        error: containerError,
+        instance,
+        writeFileSync,
+        //@ts-ignore
+    } = UseWebContainer({ templateData })
 
     useEffect(() => {
         setPlaygroundId(id)
@@ -94,7 +104,7 @@ const MainPlaygroundPage = () => {
                             </div>
                             <div className="flex items-center gap-1">
                                 <Tooltip>
-                                    <TooltipTrigger>
+                                    <TooltipTrigger asChild>
 
                                         <span>
                                             <Button
@@ -217,7 +227,24 @@ const MainPlaygroundPage = () => {
                                                     onContentChange={() => { }}
                                                 />
                                             </ResizablePanel>
-
+                                            {
+                                                isPreviewVisible && (
+                                                    <>
+                                                        <ResizableHandle />
+                                                        <ResizablePanel defaultSize={50}>
+                                                            <WebContainerPreview
+                                                                templateData={templateData!}
+                                                                instance={instance}
+                                                                writeFileSync={writeFileSync}
+                                                                isLoading={isLoading}
+                                                                error={error}
+                                                                serverUrl={serverUrl!}
+                                                                forceResetup={false}
+                                                            />
+                                                        </ResizablePanel>
+                                                    </>
+                                                )
+                                            }
 
                                         </ResizablePanelGroup>
                                     </div>
