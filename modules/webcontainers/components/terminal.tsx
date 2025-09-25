@@ -1,16 +1,12 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from "react";
-import { Terminal } from "xterm";
-import { FitAddon } from "xterm-addon-fit";
-import { WebLinksAddon } from "xterm-addon-web-links";
-import { SearchAddon } from "xterm-addon-search";
 import "xterm/css/xterm.css";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Copy, Trash2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
-
+import { FitAddon, FitAddonType, SearchAddon, SearchAddonType, Terminal, TerminalType, WebLinksAddon } from "../lib/terminal-util";
 interface TerminalProps {
     webcontainerUrl?: string;
     className?: string;
@@ -33,9 +29,9 @@ const
         webContainerInstance
     }, ref) => {
         const terminalRef = useRef<HTMLDivElement>(null);
-        const term = useRef<Terminal | null>(null);
-        const fitAddon = useRef<FitAddon | null>(null);
-        const searchAddon = useRef<SearchAddon | null>(null);
+        const term = useRef<TerminalType | null>(null);
+        const fitAddon = useRef<FitAddonType | null>(null);
+        const searchAddon = useRef<SearchAddonType | null>(null);
         const [isConnected, setIsConnected] = useState(false);
         const [searchTerm, setSearchTerm] = useState("");
         const [showSearch, setShowSearch] = useState(false);

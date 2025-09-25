@@ -17,7 +17,8 @@ interface UseWebContainerReturn {
 }
 
 
-export const UseWebContainer = ({ templateData }: UseWebContainerProps): UseWebContainerReturn => {
+let webcontainerInstance: WebContainer | null = null;
+export const useWebContainer = ({ templateData }: UseWebContainerProps): UseWebContainerReturn => {
     const [serverUrl, setServerUrl] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -27,7 +28,7 @@ export const UseWebContainer = ({ templateData }: UseWebContainerProps): UseWebC
         let mounted = true;
         async function initializeWebContainer() {
             try {
-                const webcontainerInstance = await WebContainer.boot();
+                webcontainerInstance = await WebContainer.boot();
                 if (!mounted) return;
                 setInstance(webcontainerInstance);
                 setIsLoading(false);
