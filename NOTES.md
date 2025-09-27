@@ -60,3 +60,119 @@
 - Reconnect to existing server
 - Display reconnection status in terminal
 - Maintain same final state as fresh setup
+
+
+
+
+----------------------------------------------------
+
+# useAISuggestion Hook
+- for managing AI-powered code suggestions inside a code editor (like Monaco)
+
+## Step by Step breakdown
+
+### Step 1 : State Setup
+
+The hook keeps track of:
+
+- `suggestion`: The AI's suggested code text
+- `isLoading`: whether we are waiting for AI response
+- `position`: where in the editor the suggestion should go (line/column)
+- `decoration` - special visual marker in the editor for suggestion (like underline or highlight)
+- `isEnabled`: whether AI suggestions are turned on or off
+
+
+### Step 2 : Turning AI Suggestions On/Off
+
+- `toggleEnabled` - simply flips the `isEnabled` state
+- If disabled, no AI suggestions will be fetched
+
+### Step 3 : Fetching an AI Suggestion
+
+- `fetchSuggestion(type,editor)` does the heavy lifting.
+- **Steps it follows:**
+  1. Checks if AI suggestions are enabled
+  2. Checks if the editor is available
+  3. Gets:
+        - The entire code in the editor
+        - The current cursor position
+  4. Sends thiss data to `api/code-suggestion` 
+  5. Waits for the AI to respond
+  6. If AI sends a suggestion, store it in a state along with the cursor position
+  7. If something fails, logs the error and stops loading
+
+
+### Step 4 : Accepting the Suggestion
+
+- `acceptSuggestion(editor,monaco)` - inserts the AI suggestion directly into the code at the saved position.
+- It also removes any highlight/decoration related to the suggestion.
+- After insertion, it clears the suggestion from memory.
+
+### Step 5 :  Rejecting or Clearing a Suggestion
+- `rejectSuggestion(editor)` - removes suggestions and highlights without inserting anything.
+
+- `clearSuggestion(editor)` - same  as reject, but can be used in other cases (like after saving)
+
+
+### Step 6 : Return Value
+The hook returns:
+- The current AI suggestion state(all variables like suggestion text, loading state,etc)
+- Functions to toggle, fetch, accept, reject, and clear suggestions
+
+### ✅In Short
+This hook talks to an AI API, gets code suggestions, show them to user, and lets them accept or reject them - just like GitHub Copilot but inside your own editor
+
+
+----------------------------------------------------------
+
+# What happens in `api/code-suggestion` endpoint?
+
+## 1. Gets api request from the editor
+ - The frontend sends the entire file's code, the cursor position, and the type of suggestion needed 
+
+## 2. Checks if request is valid
+ - Makes sure all important information is present
+
+## 3. Understands the surrounding code
+- Looks at 10lines before and after the cursor to get context
+- Finds out the language and framework being used
+- Checks if you are inside a function, class, or component
+- Detects if you are typing after a comment
+- Looks for half-written code patterns (like unfinished loops or conditionals or method calls)
+
+## 4. Builds a clear instruction for the AI
+- Descriibe the code context
+- Tells the AI exactly what kinds of code to suggest
+- Includes rules like "keep proper indentation" and "follow best practices"
+
+## 5. Talks to the AI model
+- Sends the prepared instruction to an AI
+- Waits for the AI to return a suggestion
+
+
+## 6. Cleans up the AI's answer
+- Removes extra formatting or markers
+- Keeps only the code that should be inserted
+
+## 7. Sends the suggestion back to the frontend
+- Includes suggestion,details about the code context, and some metadata(like language/framework,time).
+
+
+----------------------------------------------------------
+
+# Steps to ADD AI Inline Suggestions in Monaco Editor
+
+## 1. Track References
+
+You'll need some extra `ref`s to manage the inline suggestion lifecycle:
+- `inlineCompletionProviderRef` - Stores the registered completion provider instance so it can be disposed of later.
+- `currentSuggestionRef` - Stores the active suggestion text,position, and ID
+- `isAcceptingSuggestionRef` & `suggestionAcceptedRef` - Flags to prevent duplicate acceptance
+- `tabCommandRef` - Stores a custom Tab key handler.
+- `suggestionTimeoutRef` - Used to delay triggering suggestions 
+
+## 2. Create the Inline Completion Provider
+This tells Monaco how to provide inline suggestions when the editor requests them.
+
+```typescript
+const createInlineCompletionProvider = useCallback((monaco: Monaco) => {})
