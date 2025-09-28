@@ -13,7 +13,7 @@ import { AlertCircle, Bot, FileText, FolderOpen, Save, Settings, X } from 'lucid
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
-import PlaygroundEditor from '@/modules/playground/components/playground-editor'
+import { PlaygroundEditor } from '@/modules/playground/components/playground-editor'
 import { useWebContainer } from '@/modules/webcontainers/hooks/useWebContainer'
 import WebContainerPreview from '@/modules/webcontainers/components/webcontainer-preview'
 import LoadingStep from '@/modules/playground/components/loader'
