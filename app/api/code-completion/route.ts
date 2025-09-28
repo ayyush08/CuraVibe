@@ -109,13 +109,6 @@ function analyzeCodeContext(
 }
 function buildPrompt(context: CodeContext, suggestionType: string): string {
 
-
-
-
-
-
-
-
     return `You are an expert code completion assistant. Generate a ${suggestionType} suggestion.
 
 Language: ${context.language}

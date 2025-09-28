@@ -175,4 +175,132 @@ You'll need some extra `ref`s to manage the inline suggestion lifecycle:
 This tells Monaco how to provide inline suggestions when the editor requests them.
 
 ```typescript
-const createInlineCompletionProvider = useCallback((monaco: Monaco) => {})
+const createInlineCompletionProvider = useCallback((monaco: Monaco) => {
+  return {
+    provideInlineCompletions: async(model,position)=>{
+      if(!suggestion || !suggestionPosition) return {
+        items:[]
+      }
+
+      //Match position before showing
+      const isPositionMatch = 
+      position.lineNumber === suggestionPosition.line &&
+      position.column >= suggestionPosition.column &&
+      position.column <= suggestionPosition.column + 2;
+
+      if(!isPositionMatch) return {items:[]};
+
+      const cleanSuggestion = suggestion.replace(/\\r/g,"");
+
+
+      return {
+        items:[
+          {
+            insertText: cleanSuggestion,
+            range: new monaco.Range(
+              suggestionPosition.line,
+              suggestionPosition.column,
+              suggestionPosition.line,
+              suggestionPosition.column 
+            ),
+            kind: monaco.languages.InlineCompletionItemKind.Text,
+            label: 'AI Suggestion',
+            insertTextRules: monaco.languages.InlineCompletionInsertTextRule.InsertAsSnippet,
+          }
+        ]
+      }
+    }
+    freeInlineCompletions: ()=>{}
+  };
+},[suggestion,suggestionPosition]);
+```
+
+
+## 3. Register the Provider When you have a Suggestion
+ When you get a suggestion from AI:
+
+ ```typescript
+ if(inlineCompletionProviderRef.current){
+   inlineCompletionProviderRef.current.dispose();
+ }
+ const language = getEditorLanguage(activeFile?.fileExtension || '');
+
+ inlineCompletionProviderRef.current = monaco.languages.registerInlineCompletionsProvider(
+  language,
+  createInlineCompletionProvider(monacoRef.current!)
+  )
+  //Trigger suggestion display
+
+  editorRef.current!.trigger('ai',"editor.action.inlineSuggest.trigger",null)
+
+```
+
+## 4. Accept Suggestion on `Tab` Key Press
+
+Override Monaco's Tab key behavior to insert AI suggestions:
+
+```typescript
+tabCommandRef.current = editor.addCommand(monaco.KeyCode.Tab,()=>{
+  if(currentSuggestionRef.current){
+    //Insert suggestion manually
+     
+
+    editor.setPosition({
+      lineNumber: suggestionPosition.line,
+      column: suggestionPosition.column + suggestion.length
+    })
+    
+
+    //Clear suggestion after accepting
+    currentSuggestionRef.current = null;
+    }
+    else{
+      editor.trigger('keyboard','tab',null) //Default Tab behavior
+    }
+})
+```
+
+## 5. Reject Suggestion on `Esc` Key Press
+
+If user presses `Esc`, remove the suggestion:
+
+```typescript
+editor.addCommand(monaco.KeyCode.Escape,()=>{
+  currentSuggestionRef.current = null;
+  editor.trigger('ai','editor.action.inlineSuggest.hide',null)
+})
+```
+
+
+## 6. Trigger Suggestions Automaticallly
+You can trigger suggestion after certain typing events:
+```typescript
+editor.onDidChangeModelContent((e)=>{
+  const lastChar = e.changes[0]?.text
+
+  if(["\n",".","(","{","m"," "].includes(lastChar)){
+    setTimeout(()=>{
+      editor.trigger('ai','editor.action.inlineSuggest.trigger',null)
+    },100)
+  }
+})
+```
+
+## 7. Cleanup on Unmount
+Dispose of provider and event listeners:
+```typescript
+useEffect(()=>{
+  return ()=>{
+    inlineCompletionProviderRef.current?.dispose();
+    tabCommandRef.current?.dispose();
+},[])
+```
+
+## Summary
+1. Get AI suggestions from backend - store text & positon.
+2. Register `InlineCompletionsProvider` .
+3. Trigger `editor.action.inlineSuggest.trigger` .
+4. User presses `Tab` - insert suggestion manually.
+5. `Esc` - reject suggestion.
+6. Auto-trigger after certain characters or idle time.
+7. Clean up providers/listeners
