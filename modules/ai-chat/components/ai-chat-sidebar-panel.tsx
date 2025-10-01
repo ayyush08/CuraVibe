@@ -242,7 +242,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
         }
     };
 
-    const exportChat = () => {
+
         const exportChat = () => {
             const chatData = {
                 messages,
@@ -260,7 +260,6 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         };
-    };
 
     const filteredMessages = messages.filter((msg) => {
         if (filterType === "all") return true;
