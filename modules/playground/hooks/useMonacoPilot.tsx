@@ -1,3 +1,5 @@
+"use client";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
     registerCompletion,
@@ -6,95 +8,88 @@ import {
     type StandaloneCodeEditor,
 } from "monacopilot";
 
-interface AISuggestionsState {
-    suggestion: string | null; // kept for compatibility, but filled by monacopilot if needed
-    isLoading: boolean;
-    position: { line: number; column: number } | null;
-    isEnabled: boolean;
+interface MonacoPilotState {
+    isPilotLoading: boolean;
+    isPilotEnabled: boolean;
+    hasActiveSuggestion?: boolean;
+
 }
 
-interface UseAISuggestionsReturn extends AISuggestionsState {
+interface UseMonacoPilotReturn extends MonacoPilotState {
     toggleEnabled: () => void;
-    fetchSuggestion: (type: string, editor: StandaloneCodeEditor, monaco: Monaco) => Promise<void>;
-    acceptSuggestion: (editor: StandaloneCodeEditor, monaco: Monaco) => void;
-    rejectSuggestion: (editor: StandaloneCodeEditor) => void;
-    clearSuggestion: (editor: StandaloneCodeEditor) => void;
+    fetchSuggestion: (editor: StandaloneCodeEditor, monaco: Monaco) => void;
 }
 
-export const useAISuggestion = (): UseAISuggestionsReturn => {
-    const [state, setState] = useState<AISuggestionsState>({
-        suggestion: null,
-        isLoading: false,
-        position: null,
-        isEnabled: true,
+export const useMonacoPilot = (): UseMonacoPilotReturn => {
+    const [state, setState] = useState<MonacoPilotState>({
+        isPilotLoading: false,
+        isPilotEnabled: true,
+        hasActiveSuggestion: false,
     });
 
     const completionRef = useRef<CompletionRegistration | null>(null);
+    const stateRef = useRef<MonacoPilotState>(state);
 
+    console.log("AI Suggestion State:", state);
+    console.log("Completion Ref:", completionRef.current);
+    
+
+    useEffect(() => {
+        stateRef.current = state;
+    }, [state]);
+
+    // Toggle enable/disable AI
     const toggleEnabled = useCallback(() => {
         setState((prev) => {
-            const isEnabled = !prev.isEnabled;
-            if (!isEnabled) {
+            const isPilotEnabled = !prev.isPilotEnabled;
+            if (!isPilotEnabled) {
                 completionRef.current?.deregister();
+                completionRef.current = null;
             }
-            return { ...prev, isEnabled };
+            return { ...prev, isPilotEnabled };
         });
     }, []);
 
-    const fetchSuggestion = useCallback(
-        async (type: string, editor: StandaloneCodeEditor, monaco: Monaco) => {
-            if (!state.isEnabled || !editor) return;
-
-            // Register monacopilot once per editor instance
-            if (!completionRef.current) {
-                setState((prev) => ({ ...prev, isLoading: true }));
-
-                completionRef.current = registerCompletion(monaco, editor, {
-                    endpoint: "/api/code-completion", // your backend route
-                    language: editor.getModel()?.getLanguageId() ?? "javascript",
-                });
-
-                setState((prev) => ({ ...prev, isLoading: false }));
-            }
-
-            // NOTE: monacopilot internally fetches suggestions and handles ghost text,
-            // so here we just set a "trigger" state
-            setState((prev) => {
-                const pos = editor.getPosition();
-                return {
-                    ...prev,
-                    suggestion: null, // ghost text is rendered by monacopilot directly
-                    position:
-                        pos && typeof pos.lineNumber === "number" && typeof pos.column === "number"
-                            ? { line: pos.lineNumber, column: pos.column }
-                            : null,
-                };
-            });
-        },
-        [state.isEnabled]
-    );
-
-    const acceptSuggestion = useCallback(
+    // Register Monacopilot completion
+    const register = useCallback(
         (editor: StandaloneCodeEditor, monaco: Monaco) => {
-            // monacopilot already wires Tab/Enter to accept suggestions,
-            // but if you want manual trigger, you could simulate here.
-            // Keeping stub for API compatibility.
-            console.log("acceptSuggestion: handled by monacopilot internally.");
+            if (completionRef.current || !stateRef.current.isPilotEnabled) return;
+
+            completionRef.current = registerCompletion(monaco, editor, {
+                endpoint: "/api/code-completion-new",
+                language: editor.getModel()?.getLanguageId() || "javascript",
+                onCompletionRequested: () =>
+                    setState((prev) => ({ ...prev, isPilotLoading: true })),
+                onCompletionRequestFinished: () =>
+                    setState((prev) => ({ ...prev, isPilotLoading: false })),
+                onCompletionShown: () =>
+                    setState((prev) => ({ ...prev, isPilotLoading: false, hasActiveSuggestion: true })),
+                onCompletionAccepted() {
+                    setState((prev) => ({ ...prev, hasActiveSuggestion: false }));
+                },
+                onCompletionRejected() {
+                    setState((prev) => ({ ...prev, hasActiveSuggestion: false }));
+                },
+            });
         },
         []
     );
 
-    const rejectSuggestion = useCallback((editor: StandaloneCodeEditor) => {
-        console.log("rejectSuggestion: handled by monacopilot internally.");
-    }, []);
+    // Trigger suggestion manually
+    const fetchSuggestion = useCallback(
+        (editor: StandaloneCodeEditor, monaco: Monaco) => {
+            if (!stateRef.current.isPilotEnabled) return;
+            register(editor, monaco);
+            completionRef.current?.trigger();
+        },
+        [register]
+    );
 
-    const clearSuggestion = useCallback((editor: StandaloneCodeEditor) => {
-        console.log("clearSuggestion: handled by monacopilot internally.");
-    }, []);
-
+    // Cleanup on unmount
     useEffect(() => {
         return () => {
             completionRef.current?.deregister();
+            // completionRef.current = null;
         };
     }, []);
 
@@ -102,8 +97,6 @@ export const useAISuggestion = (): UseAISuggestionsReturn => {
         ...state,
         toggleEnabled,
         fetchSuggestion,
-        acceptSuggestion,
-        rejectSuggestion,
-        clearSuggestion,
+        hasActiveSuggestion: state.hasActiveSuggestion,
     };
 };

@@ -20,7 +20,7 @@ import LoadingStep from '@/modules/playground/components/loader'
 import { findFilePath } from '@/modules/playground/lib'
 import { toast } from 'sonner'
 import ToggleAI from '@/modules/playground/components/toggle-ai'
-import { useAISuggestion } from '@/modules/playground/hooks/useAISuggestion'
+import { useMonacoPilot } from '@/modules/playground/hooks/useMonacoPilot'
 
 const MainPlaygroundPage = () => {
     const { id } = useParams<{ id: string }>()
@@ -29,7 +29,7 @@ const MainPlaygroundPage = () => {
     const { playgroundData, templateData, isLoading, error, loadPlayground, saveTemplateData } = usePlayground(id)
 
 
-    const aiSuggestions = useAISuggestion()
+    const aiSuggestions = useMonacoPilot()
 
     const {
         setTemplateData,
@@ -394,9 +394,9 @@ const MainPlaygroundPage = () => {
                                 </Tooltip>
 
                                 <ToggleAI
-                                    isEnabled={aiSuggestions.isEnabled}
+                                    isEnabled={aiSuggestions.isPilotEnabled}
                                     onToggle={aiSuggestions.toggleEnabled}
-                                    suggestionLoading={aiSuggestions.isLoading}
+                                    suggestionLoading={aiSuggestions.isPilotEnabled}
                                 />
 
                                 <DropdownMenu>
@@ -484,17 +484,10 @@ const MainPlaygroundPage = () => {
                                                     onContentChange={(value) =>
                                                         activeFileId && updateFileContent(activeFileId, value)
                                                     }
-                                                    suggestion={aiSuggestions.suggestion}
-                                                    suggestionLoading={aiSuggestions.isLoading}
-                                                    suggestionPosition={aiSuggestions.position}
-                                                    onAcceptSuggestion={(editor, monaco) => aiSuggestions.acceptSuggestion(editor, monaco)}
-
-                                                    onRejectSuggestion={(editor) =>
-                                                        aiSuggestions.rejectSuggestion(editor)
-                                                    }
-                                                    onTriggerSuggestion={(type, editor) =>
-                                                        aiSuggestions.fetchSuggestion(type, editor)
-                                                    }
+                                                    hasActiveSuggestion={aiSuggestions.hasActiveSuggestion}
+                                                    aiEnabled={aiSuggestions.isPilotEnabled}
+                                                    suggestionLoading={aiSuggestions.isPilotLoading}
+                                                    fetchSuggestion={aiSuggestions.fetchSuggestion}
                                                 />
                                             </ResizablePanel>
                                             {
