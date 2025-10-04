@@ -26,6 +26,7 @@ export const PlaygroundEditor = ({
 }: PlaygroundEditorProps) => {
     const editorRef = useRef<any>(null);
     const monacoRef = useRef<Monaco | null>(null);
+    const idleTimeout = useRef<NodeJS.Timeout | null>(null);
 
     const handleEditorDidMount = (editor: any, monaco: Monaco) => {
         editorRef.current = editor;
@@ -60,6 +61,18 @@ export const PlaygroundEditor = ({
         editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Space, () => {
             fetchSuggestion(editor, monaco);
         });
+
+        // Trigger AI when user stops typing
+        editor.onDidChangeModelContent(() => {
+            if (!aiEnabled) return;
+
+            if (idleTimeout.current) clearTimeout(idleTimeout.current);
+
+            // wait 500ms after typing stops
+            idleTimeout.current = setTimeout(() => {
+                fetchSuggestion(editor, monaco);
+            }, 500);
+        });
     };
 
     return (
@@ -71,13 +84,13 @@ export const PlaygroundEditor = ({
                 </div>
             )}
             {/* Active suggestion indicator */}
-            { aiEnabled && hasActiveSuggestion && !suggestionLoading &&  (
+            {aiEnabled && hasActiveSuggestion && !suggestionLoading && (
                 <div className="absolute top-2 right-2 z-10 flex gap-2">
                     <div className="bg-green-100 dark:bg-green-900 px-2 py-1 rounded text-xs text-green-700 dark:text-green-300 flex items-center gap-1">
                         <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                         Press Tab to accept
                     </div>
-                    
+
                     <div className="bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded text-xs text-blue-700 dark:text-blue-300 flex items-center gap-1">
                         <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                         Esc to reject
