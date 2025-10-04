@@ -53,7 +53,7 @@ export const useMonacoPilot = (): UseMonacoPilotReturn => {
     // Register Monacopilot completion
     const register = useCallback(
         (editor: StandaloneCodeEditor, monaco: Monaco) => {
-            if (completionRef.current || !stateRef.current.isPilotEnabled) return;
+            // if (completionRef.current || !stateRef.current.isPilotEnabled) return;
 
             completionRef.current = registerCompletion(monaco, editor, {
                 endpoint: "/api/code-completion-new",
@@ -69,6 +69,8 @@ export const useMonacoPilot = (): UseMonacoPilotReturn => {
                 },
                 onCompletionRejected() {
                     setState((prev) => ({ ...prev, hasActiveSuggestion: false }));
+                    completionRef.current?.deregister();
+                    completionRef.current = null;
                 },
             });
         },
@@ -79,6 +81,7 @@ export const useMonacoPilot = (): UseMonacoPilotReturn => {
     const fetchSuggestion = useCallback(
         (editor: StandaloneCodeEditor, monaco: Monaco) => {
             if (!stateRef.current.isPilotEnabled) return;
+            if (!completionRef.current)
             register(editor, monaco);
             completionRef.current?.trigger();
         },
@@ -89,7 +92,7 @@ export const useMonacoPilot = (): UseMonacoPilotReturn => {
     useEffect(() => {
         return () => {
             completionRef.current?.deregister();
-            // completionRef.current = null;
+            completionRef.current = null;
         };
     }, []);
 
