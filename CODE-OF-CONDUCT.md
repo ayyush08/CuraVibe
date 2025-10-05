@@ -29,8 +29,7 @@ Examples of **unacceptable behavior**:
 
 If you experience or witness unacceptable behavior:
 
-1. Reach out to the maintainers privately via email or GitHub.  
-   **Email:** [maintainers@curavibe.dev](mailto:maintainers@curavibe.dev)
+1. Reach out to the maintainers privately via GitHub issues.
 
 2. Include:
    - A clear description of the incident
