@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "update-templates": "tsx scripts/update-template-dependencies.ts",
+    "update-template": "tsx scripts/update-template-dependencies.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.10.0",
@@ -82,6 +84,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "tw-animate-css": "^1.3.8",
     "typescript": "^5"
   }
