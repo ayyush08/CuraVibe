@@ -1,8 +1,8 @@
-import { error } from "console";
 import { NextRequest, NextResponse } from "next/server";
+import { GoogleGenAI, Content, GenerateContentParameters } from "@google/genai";
 
 interface ChatMessage {
-    role: 'user' | 'assistant';
+    role: 'user' | 'model'; //in gemini, the assistant is called 'model'
     content: string;
 }
 
@@ -10,12 +10,25 @@ interface ChatMessage {
 interface ChatRequest {
     message: string;
     history: ChatMessage[]; //for context
+    stream?: boolean; //whether to stream response
 }
 
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+if (!GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is not set in environment variables");
+}
 
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const MODEL = "gemini-2.5-flash";
 
-async function generateAIResponse(messages: ChatMessage[]): Promise<string> {
-    const systemPrompt = `You are a helpful AI coding assistant. You help developers with:
+function convertToGeminiContent(messages: ChatMessage[]): Content[] {
+    return messages.map(msg => ({
+        role: msg.role,
+        parts: [{ text: msg.content }],
+    }));
+}
+
+const systemPrompt = `You are a helpful AI coding assistant. You help developers with:
 - Code explanations and debugging
 - Best practices and architecture advice  
 - Writing clean, efficient code
@@ -24,41 +37,31 @@ async function generateAIResponse(messages: ChatMessage[]): Promise<string> {
 
 Always provide clear, practical answers. Use proper code formatting when showing examples.`;
 
-    const fullMessages = [{ role: "system", content: systemPrompt }, ...messages];
+async function generateAIResponse(messages: ChatMessage[]): Promise<string> {
 
-    console.log("Full Messages:", fullMessages);
+    const contents = convertToGeminiContent(messages);
 
-    const prompt = fullMessages
-        .map((msg) => `${msg.role}: ${msg.content}`)
-        .join("\n\n");
+    console.log("Contents sent to Gemini:", contents);
 
-    console.log("Prompt sent to AI:", prompt);
 
     try {
-        const response = await fetch("http://localhost:11434/api/generate", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                model: "stable-code:latest",
-                prompt: prompt,
-                stream: false,
-                options: {
-                    temperature: 0.7, // Controls randomness (0-1)
-                    max_tokens: 1000, // Maximum response length
-                    top_p: 0.9, // controls diversity
-                },
-            }),
-        });
+        const response = await ai.models.generateContent({
+            model: MODEL,
+            contents: contents,
+            config: {
+                systemInstruction: systemPrompt,
+                temperature: 0.7,
+                maxOutputTokens: 1000,
+            }
+        })
 
-        const data = await response.json();
 
-        if (!data.response) {
+        console.log("Response from AI", response);
+        if (!response.text) {
             throw new Error("No response from AI model");
         }
 
-        return data.response.trim();
+        return response.text.trim();
     } catch (error) {
         console.error("AI generation error:", error);
         throw new Error("Failed to generate AI response");
@@ -67,10 +70,50 @@ Always provide clear, practical answers. Use proper code formatting when showing
 
 }
 
+async function streamAIResponse(messages: ChatMessage[]): Promise<ReadableStream<string>> {
+    const contents = convertToGeminiContent(messages);
+    console.log("Contents sent to Gemini (stream):", contents);
+    try {
+        const responseStream = await ai.models.generateContentStream({
+            model: MODEL,
+            contents: contents,
+            config: {
+                systemInstruction: systemPrompt,
+                temperature: 0.7,
+                maxOutputTokens: 1000,
+            }
+        });
+
+        // Create a streaming response
+        const stream = new ReadableStream({
+            async start(controller) {
+                try {
+                    for await (const chunk of responseStream) {
+                        if (chunk.text) {
+                            // Enqueue the text chunk, encoding it to a byte array
+                            controller.enqueue(new TextEncoder().encode(chunk.text));
+                        }
+                    }
+                    controller.close();
+                } catch (error) {
+                    console.error("AI stream error:", error);
+                    controller.error(error);
+                }
+            },
+        });
+
+        return stream;
+
+    } catch (error) {
+        console.error("AI generation error:", error);
+        throw new Error("Failed to start AI response stream from Gemini");
+    }
+}
+
 export async function POST(req: NextRequest) {
     try {
         const body: ChatRequest = await req.json();
-        const { message, history = [] } = body;
+        const { message, history = [], stream } = body;
 
         if (!message || typeof message !== 'string') {
             return NextResponse.json(
@@ -87,7 +130,7 @@ export async function POST(req: NextRequest) {
                 typeof msg === 'object' &&
                 typeof msg.role === 'string' &&
                 typeof msg.content === 'string' &&
-                ['user', 'assistant'].includes(msg.role)
+                ['user', 'model'].includes(msg.role)
             ) : [];
 
 
@@ -100,15 +143,23 @@ export async function POST(req: NextRequest) {
         ]
 
         //Generate AI response
-
-        const aiResponse = await generateAIResponse(messages);
-
-        //can save chat to db
-
-        return NextResponse.json({
-            response: aiResponse,
-            timestamp: new Date().toISOString(),
-        });
+        if (stream) {
+            const aiStream = await streamAIResponse(messages);
+            return new NextResponse(aiStream, {
+                headers: {
+                    "Content-Type": "text/event-stream",
+                    "Cache-Control": "no-cache, no-transform",
+                    "Connection": "keep-alive",
+                },
+            });
+        }
+        else{
+            const aiResponse = await generateAIResponse(messages);
+            return NextResponse.json({
+                response: aiResponse,
+                timestamp: new Date().toISOString(),
+            });
+        }
 
     } catch (error) {
         console.error("Chat API Error:", error);

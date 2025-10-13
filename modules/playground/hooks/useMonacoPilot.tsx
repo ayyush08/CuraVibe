@@ -56,7 +56,7 @@ export const useMonacoPilot = (): UseMonacoPilotReturn => {
             // if (completionRef.current || !stateRef.current.isPilotEnabled) return;
 
             completionRef.current = registerCompletion(monaco, editor, {
-                endpoint: "/api/code-completion-new",
+                endpoint: "/api/code-completion",
                 language: editor.getModel()?.getLanguageId() || "javascript",
                 onCompletionRequested: () =>
                     setState((prev) => ({ ...prev, isPilotLoading: true })),

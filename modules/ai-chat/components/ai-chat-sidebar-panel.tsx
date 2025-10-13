@@ -4,52 +4,21 @@ import type React from "react";
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 import {
     Loader2,
     Send,
-    User,
-    Copy,
-
-    X,
-
-    Code,
-    Sparkles,
-    MessageSquare,
-    RefreshCw,
-
-    Settings,
-    Zap,
-    Brain,
-
-    Search,
-    Filter,
-    Download,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
 import {
     TooltipProvider,
 } from "@/components/ui/tooltip";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-    DropdownMenuCheckboxItem,
-} from "@/components/ui/dropdown-menu";
-import "katex/dist/katex.min.css";
-import Image from "next/image";
+
+import ChatHeader from "./Chat-Header";
+import MessageContainer from "./message-container";
 
 interface ChatMessage {
-    role: "user" | "assistant";
+    role: "user" | "model";
     content: string;
     id: string;
     timestamp: Date;
@@ -64,48 +33,7 @@ interface AIChatSidePanelProps {
     theme?: "dark" | "light";
 }
 
-const MessageTypeIndicator: React.FC<{
-    type?: string;
-    model?: string;
-    tokens?: number;
-}> = ({ type, model, tokens }) => {
-    const getTypeConfig = (type?: string) => {
-        switch (type) {
-            case "code_review":
-                return { icon: Code, color: "text-blue-400", label: "Code Review" };
-            case "suggestion":
-                return {
-                    icon: Sparkles,
-                    color: "text-purple-400",
-                    label: "Suggestion",
-                };
-            case "error_fix":
-                return { icon: RefreshCw, color: "text-red-400", label: "Error Fix" };
-            case "optimization":
-                return { icon: Zap, color: "text-yellow-400", label: "Optimization" };
-            default:
-                return { icon: MessageSquare, color: "text-zinc-400", label: "Chat" };
-        }
-    };
 
-    const config = getTypeConfig(type);
-    const Icon = config.icon;
-
-    return (
-        <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1">
-                <Icon className={cn("h-3 w-3", config.color)} />
-                <span className={cn("text-xs font-medium", config.color)}>
-                    {config.label}
-                </span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
-                {model && <span>{model}</span>}
-                {tokens && <span>{tokens} tokens</span>}
-            </div>
-        </div>
-    );
-};
 
 export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
     isOpen,
@@ -122,10 +50,12 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
     const [filterType, setFilterType] = useState<string>("all");
     const [autoSave, setAutoSave] = useState(true);
     const [streamResponse, setStreamResponse] = useState(true);
-    const [model, setModel] = useState<string>("codellama");
+    const [streamedContent, setStreamedContent] = useState("");
+    const [currentStreamingMessageId, setCurrentStreamingMessageId] = useState<string | null>(null);
+
+
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
-
     const scrollToBottom = () => {
         if (messagesEndRef.current) {
             messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -193,31 +123,55 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                         content: msg.content,
                     })),
                     stream: streamResponse,
-                    mode: chatMode,
-                    model,
                 }),
             });
 
             if (response.ok) {
-                const data = await response.json();
+                if (streamResponse) {
+                    const reader = response.body?.getReader();
+                    const decoder = new TextDecoder();
+                    let chunkValue = "";
 
-                setMessages((prev) => [
-                    ...prev,
-                    {
-                        role: "assistant",
-                        content: data.response,
-                        timestamp: new Date(),
-                        id: Date.now().toString(),
-                        type: messageType,
-                        tokens: data.tokens,
-                        model: data.model || "AI Assistant",
-                    },
-                ]);
+                    const id = Date.now().toString();
+                    setCurrentStreamingMessageId(id);
+                    setMessages(prev => [
+                        ...prev,
+                        { role: "model", content: "", timestamp: new Date(), id, type: messageType }
+                    ]);
+
+                    while (reader) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        chunkValue += decoder.decode(value, { stream: true });
+                        setStreamedContent(chunkValue);
+                        setMessages(prev => prev.map(msg =>
+                            msg.id === id ? { ...msg, content: chunkValue } : msg
+                        ));
+                    }
+
+                    setCurrentStreamingMessageId(null);
+                    setStreamedContent("");
+                } else {
+                    const data = await response.json();
+                    setMessages(prev => [
+                        ...prev,
+                        {
+                            role: "model",
+                            content: data.response,
+                            timestamp: new Date(),
+                            id: Date.now().toString(),
+                            type: messageType,
+                            tokens: data.tokens,
+                            model: data.model || "AI Assistant",
+                        }
+                    ]);
+                }
+
             } else {
                 setMessages((prev) => [
                     ...prev,
                     {
-                        role: "assistant",
+                        role: "model",
                         content:
                             "Sorry, I encountered an error while processing your request. Please try again.",
                         timestamp: new Date(),
@@ -230,7 +184,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
             setMessages((prev) => [
                 ...prev,
                 {
-                    role: "assistant",
+                    role: "model",
                     content:
                         "I'm having trouble connecting right now. Please check your internet connection and try again.",
                     timestamp: new Date(),
@@ -242,24 +196,6 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
         }
     };
 
-
-        const exportChat = () => {
-            const chatData = {
-                messages,
-                timestamp: new Date().toISOString(),
-            };
-            const blob = new Blob([JSON.stringify(chatData, null, 2)], {
-                type: "application/json",
-            });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `ai-chat-${new Date().toISOString().split("T")[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        };
 
     const filteredMessages = messages.filter((msg) => {
         if (filterType === "all") return true;
@@ -290,312 +226,32 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                     )}
                 >
                     {/* Enhanced Header */}
-                    <div className="shrink-0 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-sm">
-                        <div className="flex items-center justify-between p-6">
-                            <div className="flex items-center gap-3">
-                                <div className="relative w-10 h-10 border rounded-full flex flex-col justify-center items-center">
-                                    <Image src={"/logo.svg"} alt="Logo" width={28} height={28} />
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-semibold text-zinc-100">
-                                        Enhanced AI Assistant
-                                    </h2>
-                                    <p className="text-sm text-zinc-400">
-                                        {messages.length} messages
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-                                        >
-                                            <Settings className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuCheckboxItem
-                                            checked={autoSave}
-                                            onCheckedChange={setAutoSave}
-                                        >
-                                            Auto-save conversations
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuCheckboxItem
-                                            checked={streamResponse}
-                                            onCheckedChange={setStreamResponse}
-                                        >
-                                            Stream responses
-                                        </DropdownMenuCheckboxItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={exportChat}>
-                                            <Download className="h-4 w-4 mr-2" />
-                                            Export Chat
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => setMessages([])}>
-                                            Clear All Messages
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                    <ChatHeader
+                        messages={messages}
+                        setMessages={setMessages}
+                        autoSave={autoSave}
+                        setAutoSave={setAutoSave}
+                        streamResponse={streamResponse}
+                        setStreamResponse={setStreamResponse}
+                        chatMode={chatMode}
+                        setChatMode={setChatMode}
+                        filterType={filterType}
+                        setFilterType={setFilterType}
+                        searchTerm={searchTerm}
+                        setSearchTerm={setSearchTerm}
+                        onClose={onClose}
 
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={onClose}
-                                    className="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
-                                >
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
-
-                        {/* Enhanced Controls */}
-                        <Tabs
-                            value={chatMode}
-                            onValueChange={(value) => setChatMode(value as any)}
-                            className="px-6"
-                        >
-                            <div className="flex items-center justify-between mb-4">
-                                <TabsList className="grid w-full grid-cols-4 max-w-md">
-                                    <TabsTrigger value="chat" className="flex items-center gap-1">
-                                        <MessageSquare className="h-3 w-3" />
-                                        Chat
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="review"
-                                        className="flex items-center gap-1"
-                                    >
-                                        <Code className="h-3 w-3" />
-                                        Review
-                                    </TabsTrigger>
-                                    <TabsTrigger value="fix" className="flex items-center gap-1">
-                                        <RefreshCw className="h-3 w-3" />
-                                        Fix
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="optimize"
-                                        className="flex items-center gap-1"
-                                    >
-                                        <Zap className="h-3 w-3" />
-                                        Optimize
-                                    </TabsTrigger>
-                                </TabsList>
-
-                                <div className="flex items-center gap-2">
-                                    <div className="hidden sm:flex items-center gap-2 text-xs text-zinc-400">
-                                        <span className="text-zinc-500">Model:</span>
-                                        <select
-                                            value={model}
-                                            onChange={(e) => setModel(e.target.value)}
-                                            className="bg-zinc-900/60 border border-zinc-800 rounded px-2 py-1 text-zinc-200 focus:outline-none"
-                                        >
-                                            <option value="gpt-6">gpt-6</option>
-                                            <option value="codellama">codellama</option>
-                                            <option value="llama2">llama2</option>
-                                        </select>
-                                    </div>
-                                    <div className="relative">
-                                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-zinc-500" />
-                                        <Input
-                                            placeholder="Search messages..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="pl-7 h-8 w-40 bg-zinc-800/50 border-zinc-700/50"
-                                        />
-                                    </div>
-
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                <Filter className="h-3 w-3" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => setFilterType("all")}>
-                                                All Messages
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => setFilterType("chat")}>
-                                                Chat Only
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={() => setFilterType("code_review")}
-                                            >
-                                                Code Reviews
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={() => setFilterType("error_fix")}
-                                            >
-                                                Error Fixes
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem
-                                                onClick={() => setFilterType("optimization")}
-                                            >
-                                                Optimizations
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </div>
-                            </div>
-                        </Tabs>
-                    </div>
+                    />
 
                     {/* Messages Container */}
-                    <div className="flex-1 overflow-y-auto bg-zinc-950">
-                        <div className="p-6 space-y-6">
-                            {filteredMessages.length === 0 && !isLoading && (
-                                <div className="text-center text-zinc-500 py-16">
-                                    <div className="relative w-16 h-16 border rounded-full flex flex-col justify-center items-center mx-auto mb-4">
-                                        <Brain className="h-8 w-8 text-zinc-400" />
-                                    </div>
-                                    <h3 className="text-xl font-semibold mb-3 text-zinc-300">
-                                        Enhanced AI Assistant
-                                    </h3>
-                                    <p className="text-zinc-400 max-w-md mx-auto leading-relaxed mb-6">
-                                        Advanced AI coding assistant with comprehensive analysis
-                                        capabilities.
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-2 max-w-lg mx-auto">
-                                        {[
-                                            "Review my React component for performance",
-                                            "Fix TypeScript compilation errors",
-                                            "Optimize database query performance",
-                                            "Add comprehensive error handling",
-                                            "Implement security best practices",
-                                            "Refactor code for better maintainability",
-                                        ].map((suggestion) => (
-                                            <button
-                                                key={suggestion}
-                                                onClick={() => setInput(suggestion)}
-                                                className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm text-zinc-300 transition-colors text-left"
-                                            >
-                                                {suggestion}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {filteredMessages.map((msg) => (
-                                <div key={msg.id} className="space-y-4">
-                                    <div
-                                        className={cn(
-                                            "flex items-start gap-4 group",
-                                            msg.role === "user" ? "justify-end" : "justify-start"
-                                        )}
-                                    >
-                                        {msg.role === "assistant" && (
-                                            <div className="relative w-10 h-10 border rounded-full flex flex-col justify-center items-center">
-                                                <Brain className="h-5 w-5 text-zinc-400" />
-                                            </div>
-                                        )}
-
-                                        <div
-                                            className={cn(
-                                                "max-w-[85%] rounded-xl shadow-sm",
-                                                msg.role === "user"
-                                                    ? "bg-zinc-900/70 text-white p-4 rounded-br-md"
-                                                    : "bg-zinc-900/80 backdrop-blur-sm text-zinc-100 p-5 rounded-bl-md border border-zinc-800/50"
-                                            )}
-                                        >
-                                            {msg.role === "assistant" && (
-                                                <MessageTypeIndicator
-                                                    type={msg.type}
-                                                    model={msg.model}
-                                                    tokens={msg.tokens}
-                                                />
-                                            )}
-
-                                            <div className="prose prose-invert prose-sm max-w-none">
-                                                <ReactMarkdown
-                                                    remarkPlugins={[remarkGfm, remarkMath]}
-                                                    rehypePlugins={[rehypeKatex]}
-                                                    components={{
-                                                        code: ({ children, className, inline }) => {
-                                                            if (inline) {
-                                                                return (
-                                                                    <code className="bg-zinc-800 px-1 py-0.5 rounded text-sm">
-                                                                        {children}
-                                                                    </code>
-                                                                );
-                                                            }
-                                                            return (
-                                                                <div className="bg-zinc-800 rounded-lg p-4 my-4">
-                                                                    <pre className="text-sm text-zinc-100 overflow-x-auto">
-                                                                        <code className={className}>{children}</code>
-                                                                    </pre>
-                                                                </div>
-                                                            );
-                                                        },
-                                                    }}
-                                                >
-                                                    {msg.content}
-                                                </ReactMarkdown>
-                                            </div>
-
-                                            {/* Message actions */}
-                                            <div className="flex items-center justify-between mt-3 pt-2 border-t border-zinc-700/30">
-                                                <div className="text-xs text-zinc-500">
-                                                    {msg.timestamp.toLocaleTimeString()}
-                                                </div>
-                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            navigator.clipboard.writeText(msg.content)
-                                                        }
-                                                        className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-200"
-                                                    >
-                                                        <Copy className="h-3 w-3" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => setInput(msg.content)}
-                                                        className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-200"
-                                                    >
-                                                        <RefreshCw className="h-3 w-3" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {msg.role === "user" && (
-                                            <Avatar className="h-9 w-9 border border-zinc-700 bg-zinc-800 shrink-0">
-                                                <AvatarFallback className="bg-zinc-700 text-zinc-300">
-                                                    <User className="h-5 w-5" />
-                                                </AvatarFallback>
-                                            </Avatar>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-
-                            {isLoading && (
-                                <div className="flex items-start gap-4 justify-start">
-                                    <div className="relative w-10 h-10 border rounded-full flex flex-col justify-center items-center">
-                                        <Brain className="h-5 w-5 text-zinc-400" />
-                                    </div>
-                                    <div className="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800/50 p-5 rounded-xl rounded-bl-md flex items-center gap-3">
-                                        <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
-                                        <span className="text-sm text-zinc-300">
-                                            {chatMode === "review"
-                                                ? "Analyzing code structure and patterns..."
-                                                : chatMode === "fix"
-                                                    ? "Identifying issues and solutions..."
-                                                    : chatMode === "optimize"
-                                                        ? "Analyzing performance bottlenecks..."
-                                                        : "Processing your request..."}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div ref={messagesEndRef} className="h-1" />
-                        </div>
-                    </div>
+                    <MessageContainer
+                        chatMode={chatMode}
+                        isLoading={isLoading}
+                        filteredMessages={filteredMessages}
+                        setInput={setInput}
+                        messagesEndRef={messagesEndRef}
+                        isStreaming={currentStreamingMessageId !== null}
+                    />
 
                     {/* Enhanced Input Form */}
                     <form
