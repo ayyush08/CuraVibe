@@ -1,36 +1,48 @@
-import { cn } from "@/lib/utils"
-import { Footer } from "@/modules/home/Footer"
-import { Header } from "@/modules/home/Header"
+
+
+import BeamGridBackground from "@/components/lightswind/beam-grid-background"
+import Navbar from "@/modules/home/Navbar"
 import { Metadata } from "next"
 
 
-export const metadata: Metadata = {
-    title: {
-        template: "CuraVibe",
-        default: "Code Editor for VibeCoders - CuraVibe"
-    }
+export const metadata:Metadata = {
+    title: "CuraVibe - Code Editor for Vibe Coders",
+    description: "CuraVibe is an AI-powered code editor designed for Vibe coders. Start coding in seconds with templates, real-time AI suggestions, and chat assistance.",
+    keywords: ["CuraVibe", "code editor", "Vibe Coders", "AI-powered", "coding", "templates", "real-time suggestions", "chat assistance"]
+
 }
-export default function HomeLayout({
+export default function Layout({
     children,
 }: {
     children: React.ReactNode
 }) {
     return (
         <>
-            <Header />
-            <div
-                className={cn(
-                    "absolute inset-0",
-                    "[background-size:40px_40px]",
-                    "[background-image:linear-gradient(to_right,#e4e4e7_1px,transparent_1px),linear-gradient(to_bottom,#e4e4e7_1px,transparent_1px)]",
-                    "dark:[background-image:linear-gradient(to_right,#262626_1px,transparent_1px),linear-gradient(to_bottom,#262626_1px,transparent_1px)]",
-                )}
-            />
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-white [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)] dark:bg-black" />
-            <main className="z-20 relative w-full pt-0">
-                {children}
-            </main>
-            <Footer />
+            <div className="fixed inset-0 w-full h-full overflow-hidden">
+                <BeamGridBackground
+                    className="absolute inset-0 "
+                    gridSize={10}
+                    gridColor="rgba(243, 110, 6)"
+                    darkGridColor="rgba(243, 110, 6, 0.05)"
+                    beamColor="rgba(243, 110, 6)"
+                    darkBeamColor="rgba(243, 110, 6)"
+                    beamSpeed={0.05}
+                    beamThickness={2}
+                    beamGlow={true}
+                    glowIntensity={20}
+                    beamCount={10}
+                    extraBeamCount={5}
+                    idleSpeed={0.5}
+                    interactive={true}
+                    asBackground={true}
+                    showFade={true}
+                    fadeIntensity={25}
+                />
+                <div className="absolute inset-0 z-0" />
+            </div>
+
+            <div className="relative z-10"><Navbar />
+                {children}</div>
         </>
     )
 }
