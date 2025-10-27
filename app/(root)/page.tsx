@@ -1,34 +1,100 @@
-import { Button } from "@/components/ui/button";
-import { APP_NAME } from "@/lib/constants";
-import { ArrowUpRight } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-export default function Home() {
+'use client'
+
+import { AuroraText } from "@/components/ui/aurora-text"
+import { RainbowButton } from "@/components/ui/rainbow-button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { useCurrentUser } from "@/hooks/use-current-user"
+import { APP_NAME } from "@/lib/constants"
+import { cn } from "@/lib/utils"
+import Features from "@/modules/home/Features"
+import { Footer } from "@/modules/home/Footer"
+import Frameworks from "@/modules/home/Frameworks"
+import HowItWorks from "@/modules/home/HowItWorks"
+import { MoveUpRight } from "lucide-react"
+import Image from "next/image"
+import Link from "next/link"
+
+export default function LandingPage() {
+    const currentUser = useCurrentUser()
+    const techComponents: { name: string; icon: React.ReactNode }[] = [
+        {
+            name: "React",
+            icon: (<Image src="/react.svg" alt="React" className="w-12 h-12" width={100} height={100} />)
+
+        },
+        {
+            name: "Next.js",
+            icon: (<Image src="/nextjs-icon.svg" alt="Next.js" className="w-12 h-12" width={100} height={100} />)
+        },
+        {
+            name: "Hono",
+            icon: (<Image src="/hono.svg" alt="Hono" className="w-12 h-12" width={100} height={100} />)
+        },
+        {
+            name: "Express",
+            icon: (<Image src="/expressjs.svg" alt="Express" className="w-12 h-12" width={100} height={100} />)
+        },
+        {
+            name: "Vue.js",
+            icon: (<Image src="/vuejs-icon.svg" alt="Vue.js" className="w-12 h-12" width={100} height={100} />)
+        },
+        {
+            name: "Angular",
+            icon: (<Image src="/angular-2.svg" alt="Angular" className="w-12 h-12" width={100} height={100} />)
+        }
+    ]
+
 
     return (
-        <div className=" z-20 flex flex-col items-center justify-start min-h-screen py-2 mt-10">
+        <>
 
-            <div className="flex flex-col justify-center items-center my-5">
-                <Image src={"/hero.svg"} alt="Hero-Section" height={300} width={300} />
+            <div className="w-full min-h-screen flex flex-col gap-5 items-center justify-center px-6" suppressHydrationWarning>
+                <div className="relative flex flex-col gap-4 md:items-center lg:flex-row">
+                    <h1
+                        className={cn(
+                            "text-black dark:text-white",
+                            "relative max-w-[43.5rem] pt-5 px-4 py-2",
+                            "font-semibold tracking-tighter text-balance text-center", // ✅ center on all screens
+                            "text-5xl sm:text-6xl md:text-7xl lg:text-6xl mx-auto"     // ✅ responsive sizing + centering
+                        )}
+                    >
+                        <AuroraText
+                            className="font-bold inline-block" // ✅ keep inline to center with text
+                            speed={1}
+                            colors={["#f36e06", "#de5114", "#d7de14"]}
+                        >
+                            {`${APP_NAME}`}
+                        </AuroraText>{" "}
+                        <br />
+                        AI-powered coding, right in your browser.
+                    </h1>
 
-                <h1 className=" z-20 text-6xl mt-5 font-extrabold text-center bg-clip-text text-transparent bg-gradient-to-r from-orange-500 via-amber-500 to-red-500 dark:from-orange-400 dark:via-amber-400 dark:to-red-400 tracking-tight leading-[1.3] ">
-                    {APP_NAME} -  Code With Intelligence
-                </h1>
+
+                </div>
+                <div className={cn("flex flex-row gap-2 space-x-2")}>
+                    {techComponents.map((tech) => (
+                        <Tooltip key={tech.name}>
+                            <TooltipTrigger>{tech.icon}</TooltipTrigger>
+                            <TooltipContent>
+                                <p>{tech.name}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    ))}
+
+                </div>
+                <Link href={'/dashboard'}>
+                    <RainbowButton className="px-15 py-5 text-xl text-balance mt-4 group flex items-center gap-2 transition-all">
+                        {currentUser ? 'Go to Dashboard' : 'Start Coding Now'}
+                        <MoveUpRight className="w-5 h-5 stroke-[3] transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+                    </RainbowButton>
+                </Link>
             </div>
+            <Features />
+            <Frameworks />
+            <HowItWorks />
+            <Footer />
+        </>
 
-
-            <p className="mt-2 text-lg text-center text-gray-600 dark:text-gray-400 px-5 py-10 max-w-2xl">
-                {APP_NAME} is a powerful and intelligent code editor that enhances
-                your coding experience with advanced features and seamless integration.
-                It is designed to help you write, debug, and optimize your code
-                efficiently.
-            </p>
-            <Link href={"/dashboard"}>
-                <Button variant={"brand"} className="mb-4" size={"lg"}>
-                    Get Started
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                </Button>
-            </Link>
-        </div>
-    );
+    )
 }
+

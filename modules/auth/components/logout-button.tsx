@@ -1,13 +1,19 @@
 
 import React from 'react'
 import { LogoutButtonProps } from '../types'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { signOut } from 'next-auth/react';
 
 const LogoutButton = ({ children }: LogoutButtonProps) => {
     const router = useRouter();
+    const pathname = usePathname();
     const onLogout = async () => {
-        await signOut()
+        if(pathname === '/'){
+            await signOut({redirect: false});
+        }else{
+            await signOut()
+        }
+        
         router.refresh()
     }
     return (
