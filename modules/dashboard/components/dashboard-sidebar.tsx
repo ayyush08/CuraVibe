@@ -36,6 +36,9 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar"
 import Image from "next/image"
+import { useCurrentUser } from "@/hooks/use-current-user"
+import { Logo } from "@/modules/home/Logo"
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 
 
 interface PlaygroundData {
@@ -53,8 +56,8 @@ const lucideIconMap: Record<string, LucideIcon> = {
     Compass: Compass,
     FlameIcon: FlameIcon,
     Terminal: Terminal,
-    Code2: Code2, 
-    // Add other mappings as needed
+    Code2: Code2,
+    
 }
 
 export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundData: PlaygroundData[] }) {
@@ -66,7 +69,8 @@ export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundD
         <Sidebar variant="inset" collapsible="icon" className="border-1 border-r">
             <SidebarHeader>
                 <div className="flex items-center gap-2 px-4 py-3 justify-center">
-                    <Image src={"/logo.svg"} alt="logo" height={60} width={60} />
+                    <Logo />
+                    <AnimatedThemeToggler/>
                 </div>
 
             </SidebarHeader>

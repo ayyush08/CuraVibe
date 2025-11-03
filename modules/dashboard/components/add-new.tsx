@@ -16,7 +16,7 @@ import { createPlayground } from "../actions";
 
 const AddNewButton = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-
+    
     const [selectedTemplate, setSelectedTemplate] = useState<TemplateType | null>(null)
     const router = useRouter()
 
@@ -33,7 +33,7 @@ const AddNewButton = () => {
         <>
             <div
                 onClick={() => setIsModalOpen(true)}
-                className="group px-6 py-6 flex flex-row justify-between items-center border rounded-lg bg-muted cursor-pointer 
+                className="group px-6 py-6 flex flex-row justify-between items-center border rounded-lg  cursor-pointer 
         transition-all duration-300 ease-in-out
         hover:bg-background hover:border-[#f36e06] hover:scale-[1.02]
         shadow-[0_2px_10px_rgba(0,0,0,0.08)]

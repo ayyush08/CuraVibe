@@ -40,8 +40,8 @@ const Features = () => {
         },
         {
             icon: <Rocket className="w-6 h-6" />,
-            title: "One-Click Deploy",
-            description: "Deploy your projects instantly to production with a single click",
+            title: "Save your work in Database",
+            description: "Save your projects instantly to the database with a single click to avoid losing your progress",
             glowColor: "#F97316",
         },
     ]
