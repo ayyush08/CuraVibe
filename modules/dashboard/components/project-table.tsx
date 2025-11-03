@@ -68,7 +68,7 @@ export default function ProjectTable({
     const [editData, setEditData] = useState<EditProjectData>({ title: "", description: "" })
     const [isLoading, setIsLoading] = useState(false)
     const [favoutrie, setFavourite] = useState(false)
-    console.log("projects", projects);
+    // console.log("projects", projects);
     
     const handleEditClick = (project: Project) => {
         setSelectedProject(project)
@@ -156,7 +156,7 @@ export default function ProjectTable({
                                         <Link href={`playground/${project.id}`} className="hover:underline">
                                             <span className="font-semibold">{project.title}</span>
                                         </Link>
-                                        <span className="text-sm text-gray-500 line-clamp-1">{project.description}</span>
+                                        <span className="text-sm text-gray-500 line-clamp-1 truncate max-w-[400px] block">{project.description}</span>
                                     </div>
                                 </TableCell>
                                 <TableCell>

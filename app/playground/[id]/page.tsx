@@ -326,7 +326,8 @@ const MainPlaygroundPage = () => {
             </div>
         );
     }
-
+    console.log("Files",templateData);
+    
     return (
         <TooltipProvider>
             <>

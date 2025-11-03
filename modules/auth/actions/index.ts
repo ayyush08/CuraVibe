@@ -10,8 +10,10 @@ export const getUserById = async (id: string) => {
             where: { id },
             include:{
                 accounts: true,
+                
             }
         })
+        
         return user
     } catch (error) {
         console.error(error)
@@ -36,4 +38,22 @@ export const getAccountByUserId = async (userId: string) => {
 export const currentUser = async () => {
     const user = await auth()
     return user?.user;
+}
+
+export const getGithubAccessTokenByUserId = async (userId: string) => {
+    try {
+        const account =  await db.account.findFirst({
+            where:{
+                userId,
+                provider: 'github'
+            }
+        })
+        console.log(account);
+        if(account?.provider !== 'github') return null
+        
+        return account?.accessToken ?? null
+    } catch (error) {
+        console.error(error)
+        return null
+    }
 }

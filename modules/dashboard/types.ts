@@ -11,7 +11,7 @@ export interface User {
 export interface Project {
     id: string
     title: string
-    description: string 
+    description: string
     template: string
     createdAt: Date
     updatedAt: Date
@@ -23,6 +23,13 @@ export interface Project {
 
 export interface TemplateType {
     title: string;
-    template: "REACT" | "NEXTJS" | "EXPRESS" | "VUE" | "HONO" | "ANGULAR";
+    template: "REACT" | "NEXTJS" | "EXPRESS" | "VUE" | "HONO" | "ANGULAR" | "UNKNOWN";
     description?: string;
+}
+
+export interface CreateFromGithubParams {
+    title: string;
+    description?: string;
+    templateData: any;
+    framework: "REACT" | "NEXTJS" | "EXPRESS" | "VUE" | "ANGULAR" | "HONO" | "UNKNOWN";
 }

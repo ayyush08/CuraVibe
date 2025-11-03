@@ -63,6 +63,7 @@ enum Templates {
   EXPRESS
   VUE
   HONO
+  UNKNOWN
   ANGULAR
 }
 

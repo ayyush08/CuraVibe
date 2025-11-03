@@ -2,26 +2,27 @@
 import { db } from "@/lib/db"
 import { currentUser } from "@/modules/auth/actions"
 import { revalidatePath } from "next/cache"
+import { CreateFromGithubParams, TemplateType } from "../types"
 
 
 
 export const toggleStarMarked = async (playgroundId: string, isMarked: boolean) => {
     const user = await currentUser()
     const userId = user?.id!
-    if(!userId)  throw new Error('User id is missing')
+    if (!userId) throw new Error('User id is missing')
     try {
-        if(isMarked){
+        if (isMarked) {
             await db.starmark.create({
-                data:{
+                data: {
                     userId,
                     playgroundId,
                     isMarked
                 }
             })
-        }else{
+        } else {
             await db.starmark.delete({
-                where:{
-                    userId_playgroundId:{
+                where: {
+                    userId_playgroundId: {
                         userId,
                         playgroundId
                     }
@@ -29,7 +30,7 @@ export const toggleStarMarked = async (playgroundId: string, isMarked: boolean) 
             })
         }
         revalidatePath('/dashboard')
-        return { success: true, isMarked  }
+        return { success: true, isMarked }
     } catch (error) {
         console.log(error)
         return { success: false, error }
@@ -46,11 +47,11 @@ export const getAllPlaygroundForUser = async () => {
             },
             include: {
                 user: true,
-                Starmark:{
+                Starmark: {
                     where: {
                         userId: user?.id
                     },
-                    select:{
+                    select: {
                         isMarked: true
                     }
                 }
@@ -65,7 +66,7 @@ export const getAllPlaygroundForUser = async () => {
 
 export const createPlayground = async (data: {
     title: string;
-    template: "REACT" | "NEXTJS" | "EXPRESS" | "VUE" | "ANGULAR" | "HONO";
+    template: "REACT" | "NEXTJS" | "EXPRESS" | "VUE" | "ANGULAR" | "HONO" | "UNKNOWN";
     description?: string;
 }) => {
     const user = await currentUser()
@@ -124,7 +125,10 @@ export const duplicateProjectById = async (id: string) => {
             where: {
                 id
             },
-            //TODO: Add template files
+            include: {
+                user: true,
+                templateFiles: true
+            }
         })
         if (!originalPlayground) {
             throw new Error('Original Playground not found')
@@ -136,8 +140,8 @@ export const duplicateProjectById = async (id: string) => {
                 description: originalPlayground.description,
                 template: originalPlayground.template,
                 userId: originalPlayground.userId,
-
-                //TODO: Add template files
+                //TODO: fix template files duplication
+                // templateFiles: originalPlayground.templateFiles
             }
         })
 
@@ -146,5 +150,44 @@ export const duplicateProjectById = async (id: string) => {
 
     } catch (error) {
         console.log(error)
+    }
+}
+
+
+export async function createPlaygroundFromGithub({
+    title,
+    description,
+    templateData,
+    framework,
+}: CreateFromGithubParams) {
+
+    try {
+        const user = await currentUser();
+        if (!user?.id) throw new Error("Unauthorized");
+
+        // 1) Create Playground entry
+        const playground = await db.playground.create({
+            data: {
+                title,
+                description,
+                template: framework,
+                userId: user.id,
+            },
+        });
+        console.log("created github playground", playground);
+
+        // 2) Store template files JSON as a single TemplateFile entry
+        const templateSave = await db.templateFile.create({
+            data: {
+                playgroundId: playground.id,
+                content: JSON.stringify(templateData), // ← This is your entire repo/folder ready to load in editor
+            },
+        });
+        console.log("created github template file", templateSave);
+
+        return playground;
+    } catch (error) {
+        console.error("Error creating playground from GitHub:", error);
+        throw error;
     }
 }

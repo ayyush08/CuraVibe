@@ -83,7 +83,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.name = existingUser.name
             token.email = existingUser.email
             token.role = existingUser.role
-
+            
             return token
         },
         async session({ session, token }) {
