@@ -19,13 +19,13 @@ interface PackageJson {
 
 // Template paths from lib/template.ts
 const TEMPLATE_PATHS = {
-  REACT: 'starters/react-ts',
-  NEXTJS: 'starters/nextjs',
-  EXPRESS: 'starters/express-simple',
-  VUE: 'starters/vue',
-  HONO: 'starters/hono-nodejs-starter',
-  ANGULAR: 'starters/angular',
-};
+  REACT: "public/starters/react",
+  NEXTJS: "public/starters/nextjs",
+  EXPRESS: "public/starters/express-simple",
+  VUE: "public/starters/vue",
+  HONO: "public/starters/hono-nodejs-starter",
+  ANGULAR: "public/starters/angular",
+}
 
 async function getLatestVersion(packageName: string): Promise<string> {
   try {
