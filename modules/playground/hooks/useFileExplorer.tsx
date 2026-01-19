@@ -38,7 +38,7 @@ interface FileExplorerState {
     handleAddFile: (
         newFile: TemplateFile,
         parentPath: string,
-        writeFileSync: (filePath: string, content: string) => Promise<void>,
+        writeFileSync: ((filePath: string, content: string) => Promise<void>) | undefined | null,
         instance: any,
         saveTemplateData: (data: TemplateFolder) => Promise<void>
     ) => Promise<void>;

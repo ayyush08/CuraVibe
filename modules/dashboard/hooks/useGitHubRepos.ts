@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 
 const REPOS_PER_PAGE = 20
 
-export const useGithubRepos = (token: string | null) => {
+export const useGithubRepos = (token: string | null,isOpen: boolean) => {
     const [repos, setRepos] = useState<any[]>([])
     const [page, setPage] = useState(1)
     const [hasMore, setHasMore] = useState(true)
@@ -26,6 +26,7 @@ export const useGithubRepos = (token: string | null) => {
 
     useEffect(() => {
         if (!token) return
+        if(!isOpen) return;
         const fetchRepos = async () => {
             setLoading(true)
 
@@ -48,7 +49,7 @@ export const useGithubRepos = (token: string | null) => {
             setLoading(false)
         }
         fetchRepos()
-    }, [token, page])
+    }, [token, page, isOpen])
     console.log("repos",repos);
     
     return { repos, loading, hasMore, lastRepoRef }

@@ -64,7 +64,7 @@ export default function Navbar() {
                                     </NavigationMenuLink>
                                 </NavigationMenuItem> */}
                                 <NavigationMenuItem>
-                                    <UserButton />
+                                    <UserButton user={currentUser} />
                                 </NavigationMenuItem>
                             </>
                         ) : (
