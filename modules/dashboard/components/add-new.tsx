@@ -1,77 +1,81 @@
-
 "use client";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 // import { createPlayground } from "@/features/playground/actions";
-import { Plus } from 'lucide-react'
-import Image from "next/image"
+import { Plus } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react"
+import { useState } from "react";
 import { toast } from "sonner";
 import TemplateSelectingModal from "./template-selecting-modal";
 import { TemplateType } from "../types";
 import { createPlayground } from "../actions";
-
-
+import { BorderBeam } from "@/components/ui/border-beam";
 
 const AddNewButton = () => {
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    
-    const [selectedTemplate, setSelectedTemplate] = useState<TemplateType | null>(null)
-    const router = useRouter()
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const handleSubmit = async (data: TemplateType) => {
-        setSelectedTemplate(data)
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType | null>(
+    null
+  );
+  const router = useRouter();
 
-        const res = await createPlayground(data);
-        toast.success("Playground Created successfully")
-        setIsModalOpen(false)
-        router.push(`/playground/${res?.id}`)
-    }
+  const handleSubmit = async (data: TemplateType) => {
+    setSelectedTemplate(data);
 
-    return (
-        <>
-            <div
-                onClick={() => setIsModalOpen(true)}
-                className="group px-6 py-6 flex flex-row justify-between items-center border rounded-lg  cursor-pointer 
+    const res = await createPlayground(data);
+    toast.success("Playground Created successfully");
+    setIsModalOpen(false);
+    router.push(`/playground/${res?.id}`);
+  };
+
+  return (
+    <div className="relative">
+      <div
+        onClick={() => setIsModalOpen(true)}
+        className="group px-6 py-6 h-full flex flex-row justify-between items-center border  border-orange-500/10  rounded-lg  cursor-pointer  relative
         transition-all duration-300 ease-in-out
-        hover:bg-background hover:border-[#f36e06] hover:scale-[1.02]
+        hover:scale-[1.02]
         shadow-[0_2px_10px_rgba(0,0,0,0.08)]
-        hover:shadow-[0_10px_30px_rgba(243,110,6,0.15)]"
-            >
-                <div className="flex flex-row justify-center items-start gap-4">
-                    <Button
-                        variant={"outline"}
-                        className="flex justify-center items-center bg-white group-hover:bg-[#fff8f8] group-hover:border-[#f36e06] group-hover:text-[#f36e06] transition-colors duration-300"
-                        size={"icon"}
-                    >
-                        <Plus size={30} className="transition-transform duration-300 group-hover:rotate-90" />
-                    </Button>
-                    <div className="flex flex-col">
-                        <h1 className="text-xl font-bold text-[#f36e06]">Add New</h1>
-                        <p className="text-sm text-muted-foreground max-w-[220px]">Create a new playground</p>
-                    </div>
-                </div>
-
-                <div className="relative overflow-hidden">
-                    <Image
-                        src={"/add-new.svg"}
-                        alt="Create new playground"
-                        width={150}
-                        height={150}
-                        className="transition-transform duration-300 group-hover:scale-110"
-                    />
-                </div>
-            </div>
-            <TemplateSelectingModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                onSubmit={handleSubmit}
-
+        hover:shadow-[0_10px_30px_rgba(243,110,6,0.25)]"
+      >
+        <div className="flex flex-row justify-center items-start gap-4">
+          <Button
+            variant={"outline"}
+            className="flex justify-center items-center bg-white group-hover:bg-[#fff8f8] group-hover:border-[#f36e06] group-hover:text-[#f36e06] transition-colors duration-300"
+            size={"icon"}
+          >
+            <Plus
+              size={30}
+              className="transition-transform duration-300 group-hover:rotate-90"
             />
+          </Button>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-bold text-[#f36e06]">Add New</h1>
+            <p className="text-sm text-muted-foreground max-w-[220px]">
+              Create a new playground
+            </p>
+          </div>
+        </div>
 
-        </>
-    )
-}
+        <div className="relative overflow-hidden">
+          <Image
+            src={"/add-new.svg"}
+            alt="Create new playground"
+            width={150}
+            height={150}
+            className="transition-transform duration-300 group-hover:scale-110"
+          />
+        </div>
+        <BorderBeam reverse duration={10} size={100} className="from-amber-500 via-orange-500 to-yellow-500" borderWidth={1}/>
+      </div>
+      <TemplateSelectingModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={handleSubmit}
+      />
+    </div>
+  );
+};
 
-export default AddNewButton
+export default AddNewButton;

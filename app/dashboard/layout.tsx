@@ -1,40 +1,20 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { getAllPlaygroundForUser } from "@/modules/dashboard/actions";
 import { DashboardSidebar } from "@/modules/dashboard/components/dashboard-sidebar";
+import Navbar from "@/modules/home/Navbar";
 
 export default async function DashboardLayout({
-    children,
+  children
 }: {
-    children: React.ReactNode
+  children: React.ReactNode;
 }) {
-    const playgroundData = await getAllPlaygroundForUser()
+  return (
+    <div className="min-h-screen w-full bg-white dark:bg-black">
+      {/* Floating navbar */}
+      <Navbar />
 
-    const technologyIconMap: Record<string, string> = {
-        REACT: "Zap",
-        NEXTJS: "Lightbulb",
-        EXPRESS: "Database",
-        VUE: "Compass",
-        HONO: "FlameIcon",
-        ANGULAR: "Terminal",
-    }
-
-    const formattedPlaygroundData = playgroundData?.map((playground) => ({
-        id: playground.id,
-        name: playground.title,
-        starred: playground.Starmark[0]?.isMarked || false,
-        icon: technologyIconMap[playground.template] || "Code",
-    }))
-
-    return (
-
-        <SidebarProvider>
-            <div className="flex min-h-screen w-full overflow-x-hidden">
-                {/* @ts-expect-error undeclared */}
-                <DashboardSidebar initialPlaygroundData={formattedPlaygroundData}/>
-                <main className="flex-1">
-                    {children}
-                </main>
-            </div>
-        </SidebarProvider>
-    )
+      {/* Flow wrapper */}
+      <main className="relative z-0 w-full pt-28">{children}</main>
+    </div>
+  );
 }

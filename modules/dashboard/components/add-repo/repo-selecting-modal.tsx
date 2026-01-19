@@ -33,7 +33,7 @@ export default function AddGithubRepoModal({ isOpen, onClose, onSubmit, creating
     const [selectedFolder, setSelectedFolder] = useState<any>(null)
 
     const { token: githubAccessToken, loading, connectGithub } = useGithubAuth()
-    const { repos, hasMore, loading: reposLoading, lastRepoRef } = useGithubRepos(githubAccessToken)
+    const { repos, hasMore, loading: reposLoading, lastRepoRef } = useGithubRepos(githubAccessToken,isOpen)
     const {
         repoFolders,
         templateData,

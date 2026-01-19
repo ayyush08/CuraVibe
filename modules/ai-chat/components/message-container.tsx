@@ -77,7 +77,7 @@ const MessageContainer: React.FC<MessageContainerProps> = ({
 }) => {
 
     const currentUser = useCurrentUser()
-    console.log("Current user", currentUser);
+    // console.log("Current user", currentUser);
 
     return (
         <div className="flex-1 overflow-y-auto bg-zinc-950">
