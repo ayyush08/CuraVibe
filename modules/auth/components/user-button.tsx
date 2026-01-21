@@ -21,7 +21,7 @@ const UserButton = ({ user }: any) => {
         <div className={cn("relative rounded-full")}>
           <Avatar>
             {user?.image && (
-              <AvatarImage src={user.image} alt={user.name ?? "User"} crossOrigin="anonymous"/>
+              <AvatarImage src={`/api/avatar?url=${encodeURIComponent(user.image)}`} alt={user.name ?? "User"} crossOrigin="anonymous"/>
             )}
             <AvatarFallback className="bg-red-500">
               <User className="text-white" />

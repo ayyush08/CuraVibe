@@ -21,6 +21,7 @@ import { findFilePath } from '@/modules/playground/lib'
 import { toast } from 'sonner'
 import ToggleAI from '@/modules/playground/components/toggle-ai'
 import { useMonacoPilot } from '@/modules/playground/hooks/useMonacoPilot'
+import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 
 const MainPlaygroundPage = () => {
     const { id } = useParams<{ id: string }>()
@@ -358,6 +359,7 @@ const MainPlaygroundPage = () => {
                                 </p>
                             </div>
                             <div className="flex items-center gap-1">
+                                <AnimatedThemeToggler />
                                 <Tooltip>
                                     <TooltipTrigger asChild>
 

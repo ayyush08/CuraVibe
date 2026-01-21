@@ -18,7 +18,7 @@ import React from "react";
 
 const Page = async () => {
   const playgrounds = await getAllPlaygroundForUser();
-
+  
   return (
     <div className="flex flex-col justify-start items-center min-h-screen mx-auto  dark:bg-black px-8  w-full">
       <div className="mb-12 w-full  mt-4">
@@ -51,6 +51,7 @@ const Page = async () => {
             onUpdateProject={editProjectById}
             //@ts-ignore
             onDuplicateProject={duplicateProjectById}
+            
           />
         )}
       </div>
