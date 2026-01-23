@@ -18,6 +18,8 @@ import React from "react";
 
 const Page = async () => {
   const playgrounds = await getAllPlaygroundForUser();
+  console.log("playgrounds",playgrounds);
+  
   
   return (
     <div className="flex flex-col justify-start items-center min-h-screen mx-auto  dark:bg-black px-8  w-full">

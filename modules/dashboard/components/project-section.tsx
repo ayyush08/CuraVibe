@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import moment from 'moment';
+import moment from "moment";
 import type { Project } from "../types";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -35,7 +35,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   MoreHorizontal,
   Edit3,
@@ -47,7 +47,8 @@ import {
   Star,
   Icon,
   PlusIcon,
-  Zap
+  Zap,
+  Search
 } from "lucide-react";
 import { toast } from "sonner";
 import { MarkedToggleButton } from "./marked-toggle";
@@ -58,6 +59,8 @@ import {
   TooltipTrigger
 } from "@/components/ui/tooltip";
 import { templateToIconMap } from "./template-icons";
+import { toggleStarMarked } from "../actions";
+import EmptyState from "./empty-state";
 
 interface ProjectSectionShowcaseProps {
   projects: Project[];
@@ -79,8 +82,7 @@ export default function ProjectSectionShowcase({
   projects,
   onUpdateProject,
   onDeleteProject,
-  onDuplicateProject,
-  onMarkasFavorite
+  onDuplicateProject
 }: ProjectSectionShowcaseProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -90,7 +92,22 @@ export default function ProjectSectionShowcase({
     description: ""
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [marked, setMarked] = useState(false);
+  const [isMarking, setIsMarking] = useState<string[]>([]);
+
+  const [search, setSearch] = useState("");
+  const [showFavorites, setShowFavorites] = useState(false);
+
+  const filteredProjects = useMemo(() => {
+    return projects.filter((project) => {
+      const matchesSearch =
+        project.title.toLowerCase().includes(search.toLowerCase()) ||
+        project.description?.toLowerCase().includes(search.toLowerCase());
+
+      const isFavorite = project.Starmark.length > 0;
+
+      return matchesSearch && (!showFavorites || isFavorite);
+    });
+  }, [projects, search, showFavorites]);
 
   const handleEditClick = (project: Project) => {
     setSelectedProject(project);
@@ -104,9 +121,17 @@ export default function ProjectSectionShowcase({
   };
 
   const handleUpdateStarMark = async (projectId: string) => {
-    // if (!selectedProject || !onMarkasFavorite) return;
-    setMarked(!marked);
-    toast.success(marked ? "Removed from favorites" : "Marked as favorite");
+    if (isMarking.includes(projectId)) return;
+    setIsMarking((prev) => [...prev, projectId]);
+    const res = await toggleStarMarked(
+      projectId,
+      !projects.find((p) => p.id === projectId)?.Starmark.length
+    );
+    console.log("res:", res);
+    toast.success(
+      res.isMarked == false ? "Removed from favorites" : "Marked as favorite"
+    );
+    setIsMarking((prev) => prev.filter((id) => id !== projectId));
   };
 
   const handleUpdateProject = async () => {
@@ -129,8 +154,8 @@ export default function ProjectSectionShowcase({
     setIsLoading(true);
     try {
       await onDeleteProject(selectedProject.id);
-      setDeleteDialogOpen(false);
       toast.success("Project deleted successfully");
+      setDeleteDialogOpen(false);
     } catch (error: any) {
       console.log(error);
       toast.error("Failed to delete project");
@@ -161,15 +186,49 @@ export default function ProjectSectionShowcase({
 
   return (
     <>
+      <div className="flex flex-col sm:flex-row gap-4 px-5 mb-6 items-center justify-between">
+        {/* Search */}
+        <div className="relative w-full sm:max-w-sm">
+          <Input
+            placeholder="Search projects..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+        </div>
+
+        {/* Favorites Toggle */}
+        <Button
+          className={`flex items-center gap-2 ${
+            showFavorites ? "bg-yellow-100 text-yellow-800" : ""
+          }`}
+          variant="outline"
+          onClick={() => setShowFavorites((prev) => !prev)}
+        >
+          <Star
+            className={`h-4 w-4 ${
+              showFavorites ? "fill-yellow-500 text-yellow-500" : ""
+            }`}
+          />
+          Starred
+        </Button>
+      </div>
+
       {/* Flexbox with fixed card dimensions for consistent sizing */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full ">
-        {projects.map((project, index) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full px-5">
+        {filteredProjects.length === 0 && (
+          <div className="flex flex-col justify-center items-center w-full col-span-full py-20">
+            <EmptyState message="No such projects found" messageDescription="Try adjusting your search or filters to find what you're looking for." />
+          </div>
+        )}
+        {filteredProjects.map((project, index) => (
           <div key={project.id} className=" relative ">
             <PlusIcon className="absolute h-6 w-6 -top-3 -left-3 dark:text-white text-black z-10" />
             <PlusIcon className="absolute h-6 w-6 -bottom-3 -left-3 dark:text-white text-black z-10" />
             <PlusIcon className="absolute h-6 w-6 -top-3 -right-3 dark:text-white text-black z-10" />
             <PlusIcon className="absolute h-6 w-6 -bottom-3 -right-3 dark:text-white text-black z-10" />
-            <Card className="flex flex-col overflow-hidden rounded-none group relative transition-all duration-300 hover:shadow-2xl border border-orange-500 dark:bg-transparent bg-transparent h-full w-full">
+            <Card className="flex flex-col overflow-hidden rounded-none group relative transition-all duration-300 hover:shadow-2xl border border-orange-500 dark:bg-transparent bg-transparent h-full ">
               {/* Card Header */}
               <div className="flex items-center mx-auto  justify-center gap-3 p-5 border-b border-border/40">
                 <div className="flex items-center  gap-3 flex-1 hover:scale-[1.05] transition-all duration-300">
@@ -230,12 +289,13 @@ export default function ProjectSectionShowcase({
                       <Button
                         variant="ghost"
                         size="icon"
+                        disabled={isMarking.includes(project.id)}
                         className="h-8 w-8 hover:bg-primary/10"
                         onClick={() => handleUpdateStarMark(project.id)}
                         aria-label="Add to favorites"
                       >
                         <Star
-                          className={`h-4 w-4 ${marked ? "fill-yellow-500 text-yellow-500" : ""}`}
+                          className={`h-4 w-4 ${project.Starmark.length > 0 ? "fill-yellow-500 text-yellow-500" : ""}`}
                         />
                       </Button>
                     </TooltipTrigger>
@@ -332,7 +392,7 @@ export default function ProjectSectionShowcase({
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={() => handleDeleteProject()}
+                        onClick={() => handleDeleteClick(project)}
                         aria-label="Delete project"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -354,16 +414,21 @@ export default function ProjectSectionShowcase({
 
       {/* Edit Project Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] animate-in fade-in zoom-in-95 duration-200">
+        <DialogContent
+          onInteractOutside={(e) => e.preventDefault()}
+          className="sm:max-w-[425px] animate-in fade-in zoom-in-95 duration-200 bg-orange-50 dark:bg-black border border-amber-500"
+        >
           <DialogHeader>
-            <DialogTitle>Edit Project</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-orange-600 font-bold text-2xl font-mono text-center ">
+              Edit Project
+            </DialogTitle>
+            <DialogDescription className="text-orange-500 text-center font-semibold font-mono">
               Make changes to your project details here. Click save when
               you&apos;re done.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
+          <div className="grid gap-4 py-4 ">
+            <div className="grid gap-4 ">
               <Label htmlFor="title">Project Title</Label>
               <Input
                 id="title"
@@ -393,7 +458,7 @@ export default function ProjectSectionShowcase({
           <DialogFooter>
             <Button
               type="button"
-              variant="outline"
+              className="bg-red-500/90 hover:bg-red-500 cursor-pointer text-white font-mono font-semibold"
               onClick={() => setEditDialogOpen(false)}
               disabled={isLoading}
             >
@@ -401,6 +466,7 @@ export default function ProjectSectionShowcase({
             </Button>
             <Button
               type="button"
+              className="bg-orange-500/80 hover:bg-orange-500 cursor-pointer text-white font-mono font-semibold"
               onClick={handleUpdateProject}
               disabled={isLoading || !editData.title.trim()}
             >
@@ -424,7 +490,10 @@ export default function ProjectSectionShowcase({
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteProject}
+              onClick={(e) => {
+                e.preventDefault(); // ⛔ stop auto close
+                handleDeleteProject();
+              }}
               disabled={isLoading}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

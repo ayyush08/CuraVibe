@@ -12,11 +12,18 @@ export const toggleStarMarked = async (playgroundId: string, isMarked: boolean) 
     if (!userId) throw new Error('User id is missing')
     try {
         if (isMarked) {
-            await db.starmark.create({
-                data: {
+            await db.starmark.upsert({
+                where:{
+                    userId_playgroundId:{
+                        userId,
+                        playgroundId
+                    }
+                },
+                update:{},
+                create:{
                     userId,
                     playgroundId,
-                    isMarked
+                    isMarked: true
                 }
             })
         } else {
@@ -51,9 +58,6 @@ export const getAllPlaygroundForUser = async () => {
                     where: {
                         userId: user?.id
                     },
-                    select: {
-                        isMarked: true
-                    }
                 }
             }
         })
@@ -82,6 +86,7 @@ export const createPlayground = async (data: {
                 userId: user?.id!
             }
         })
+        revalidatePath('/dashboard')
         return playground
     } catch (error) {
         console.log(error)
