@@ -9,15 +9,13 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, Check, ChevronRight, FolderGit2, Star, Lock, Github, Loader2, CheckCircle2, Folder, AlertCircle } from "lucide-react"
+import {  Github, Loader2, CheckCircle2, Folder, AlertCircle } from "lucide-react"
 import { RainbowButton } from "@/components/ui/rainbow-button"
 import { useRepoFolders } from "../../hooks/useRepoFolders"
 import { useGithubAuth } from "../../hooks/useGitHubAuth"
 import { useGithubRepos } from "../../hooks/useGitHubRepos"
 import RepoCard from "./repo-card"
 import Link from "next/link"
-import { createPlayground } from "../../actions"
-import { toast } from "sonner"
 import { CreateFromGithubParams } from "../../types"
 
 interface AddGithubRepoModalProps {

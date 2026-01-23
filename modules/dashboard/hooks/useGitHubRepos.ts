@@ -11,7 +11,7 @@ export const useGithubRepos = (token: string | null,isOpen: boolean) => {
     const observer = useRef<IntersectionObserver | null>(null)
 
     const lastRepoRef = useCallback(
-        (node: HTMLButtonElement | null) => {
+        (node: HTMLDivElement | null) => {
             if (loading) return
             if (observer.current) observer.current.disconnect()
             observer.current = new IntersectionObserver(entries => {
