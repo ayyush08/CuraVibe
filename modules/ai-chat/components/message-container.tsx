@@ -20,6 +20,7 @@ interface MessageContainerProps {
     isStreaming?: boolean;
     currentStreamingMessageId?: string | null;
     streamedContent?: string;
+    isLoadingHistory?: boolean;
 }
 
 const MessageTypeIndicator: React.FC<{
@@ -42,7 +43,7 @@ const MessageTypeIndicator: React.FC<{
             case "optimization":
                 return { icon: Zap, color: "text-yellow-400", label: "Optimization" };
             default:
-                return { icon: MessageSquare, color: "text-zinc-400", label: "Chat" };
+                return { icon: MessageSquare, color: "text-orange-400", label: "Chat" };
         }
     };
 
@@ -74,23 +75,37 @@ const MessageContainer: React.FC<MessageContainerProps> = ({
     isStreaming,
     currentStreamingMessageId,
     streamedContent,
+    isLoadingHistory = false,
 }) => {
 
     const currentUser = useCurrentUser()
     // console.log("Current user", currentUser);
 
     return (
-        <div className="flex-1 overflow-y-auto bg-zinc-950">
+        <div className="flex-1 overflow-y-auto dark:bg-black bg-white">
             <div className="p-6 space-y-6">
-                {filteredMessages.length === 0 && !isLoading && (
-                    <div className="text-center text-zinc-500 py-16">
-                        <div className="relative w-16 h-16 border rounded-full flex flex-col justify-center items-center mx-auto mb-4">
-                            <Brain className="h-8 w-8 text-zinc-400" />
+                {isLoadingHistory && (
+                    <div className="text-center text-zinc-500 py-16 rounded-lg">
+                        <div className="relative w-16 h-16 border border-orange-300 rounded-full flex flex-col justify-center items-center mx-auto mb-4">
+                            <Loader2 className="h-8 w-8 text-orange-500 animate-spin" />
                         </div>
-                        <h3 className="text-xl font-semibold mb-3 text-zinc-300">
+                        <h3 className="text-xl font-semibold mb-3 text-black dark:text-zinc-300">
+                            Loading Chat History
+                        </h3>
+                        <p className="dark:text-zinc-400 text-zinc-900 max-w-md mx-auto leading-relaxed">
+                            Restoring your previous conversations...
+                        </p>
+                    </div>
+                )}
+                {!isLoadingHistory && filteredMessages.length === 0 && !isLoading && (
+                    <div className="text-center text-zinc-500 py-16  rounded-lg">
+                        <div className="relative w-16 h-16 border border-orange-300 rounded-full flex flex-col justify-center items-center mx-auto mb-4">
+                            <Brain className="h-8 w-8  text-orange-500" />
+                        </div>
+                        <h3 className="text-xl font-semibold mb-3 text-black dark:text-zinc-300">
                             Enhanced AI Assistant
                         </h3>
-                        <p className="text-zinc-400 max-w-md mx-auto leading-relaxed mb-6">
+                        <p className="dark:text-zinc-400 text-zinc-900 max-w-md mx-auto leading-relaxed mb-6">
                             Advanced AI coding assistant with comprehensive analysis
                             capabilities.
                         </p>
@@ -106,7 +121,7 @@ const MessageContainer: React.FC<MessageContainerProps> = ({
                                 <button
                                     key={suggestion}
                                     onClick={() => setInput(suggestion)}
-                                    className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm text-zinc-300 transition-colors text-left"
+                                    className="px-3 py-2 bg-neutral-300 text-zinc-950 font-semibold  hover:bg-neutral-400 dark:bg-neutral-800 rounded-lg text-sm dark:text-zinc-300 dark:hover:bg-neutral-700 cursor-pointer transition-colors text-left"
                                 >
                                     {suggestion}
                                 </button>
@@ -124,8 +139,8 @@ const MessageContainer: React.FC<MessageContainerProps> = ({
                             )}
                         >
                             {msg.role === "model" && (
-                                <div className="relative w-10 h-10 border rounded-full flex flex-col justify-center items-center">
-                                    <Brain className="h-5 w-5 text-zinc-400" />
+                                <div className="relative w-10 h-10 border border-orange-500 rounded-full flex flex-col justify-center items-center">
+                                    <Brain className="h-5 w-5 text-orange-500" />
                                 </div>
                             )}
 
@@ -133,8 +148,8 @@ const MessageContainer: React.FC<MessageContainerProps> = ({
                                 className={cn(
                                     "max-w-[85%] rounded-xl shadow-sm",
                                     msg.role === "user"
-                                        ? "bg-zinc-900/70 text-white p-4 rounded-br-md"
-                                        : "bg-zinc-900/80 backdrop-blur-sm text-zinc-100 p-5 rounded-bl-md border border-zinc-800/50"
+                                        ? "bg-orange-900 dark:bg-orange-800/65 text-white  p-4 rounded-br-md"
+                                        : "bg-orange-100/75 backdrop-blur-sm text-black   p-5 rounded-bl-md border "
                                 )}
                             >
                                 {msg.role === "model" && (
@@ -171,10 +186,10 @@ const MessageContainer: React.FC<MessageContainerProps> = ({
                                 </div>
 
                                 {/* Message actions */}
-                                <div className="flex items-center justify-between mt-3 pt-2 border-t border-zinc-700/30">
-                                    <div className="text-xs text-zinc-500">
+                                <div className="flex items-center justify-end mt-2 ">
+                                    {/* <div className={`text-xs ${msg.role === "user" ? "text-zinc-300" : "text-zinc-500"}`}>
                                         {moment(msg.timestamp).fromNow()}
-                                    </div>
+                                    </div> */}
                                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <Button
                                             variant="ghost"
@@ -182,7 +197,7 @@ const MessageContainer: React.FC<MessageContainerProps> = ({
                                             onClick={() =>
                                                 navigator.clipboard.writeText(msg.content)
                                             }
-                                            className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-200"
+                                            className="h-6 w-6 p-0 text-orange-400 hover:text-orange-500"
                                         >
                                             <Copy className="h-3 w-3" />
                                         </Button>
@@ -190,7 +205,7 @@ const MessageContainer: React.FC<MessageContainerProps> = ({
                                             variant="ghost"
                                             size="sm"
                                             onClick={() => setInput(msg.content)}
-                                            className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-200"
+                                            className="h-6 w-6 p-0 text-orange-400 hover:text-orange-500"
                                         >
                                             <RefreshCw className="h-3 w-3" />
                                         </Button>

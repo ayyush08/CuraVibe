@@ -88,7 +88,13 @@
   0% {
     background-position: 0 0;}
   100% {
-    background-position: 100% -100%;}}}
+    background-position: 100% -100%;}}
+  --animate-float: float 6s ease-in-out infinite;
+  @keyframes float {
+  0%, 100% {
+    transform: translateY(0px);}
+  50% {
+    transform: translateY(-15px);}}}
 
 :root {
   --radius: 0.625rem;

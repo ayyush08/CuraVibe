@@ -3,6 +3,12 @@ import { getAllPlaygroundForUser } from "@/modules/dashboard/actions";
 import { DashboardSidebar } from "@/modules/dashboard/components/dashboard-sidebar";
 import Navbar from "@/modules/home/Navbar";
 
+
+export const metadata = {
+  title: "Dashboard - CuraVibe",
+  description: "Your AI-powered project playgrounds.",
+};
+
 export default async function DashboardLayout({
   children
 }: {

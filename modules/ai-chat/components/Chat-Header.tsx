@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -8,10 +8,14 @@ import {
     DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
-import { Code, Download, Filter, MessageSquare, RefreshCw, Search, Settings, X, Zap } from 'lucide-react';
+import { Code, Download, Filter, MessageSquare, RefreshCw, Search, Settings, X, Zap, Check, Cloud, CloudOff } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
+import { useCurrentUser } from '@/hooks/use-current-user';
+import { Logo } from '@/modules/home/Logo';
+import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler';
+import { autosaveChatMessages } from '../actions';
 
 interface ChatHeaderProps {
     messages: any[];
@@ -27,6 +31,9 @@ interface ChatHeaderProps {
     setSearchTerm: (term: string) => void;
     filterType: string;
     setFilterType: (type: string) => void;
+    playgroundId: string;
+    historyMessageCount: number;
+    hasHydratedHistory: boolean;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({
@@ -43,7 +50,92 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
     setSearchTerm,
     filterType,
     setFilterType,
+    playgroundId,
+    historyMessageCount,
+    hasHydratedHistory
 }: ChatHeaderProps) => {
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const [unsavedMessages, setUnsavedMessages] = useState<any[]>([]);
+    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const lastSavedCountRef = useRef(0);
+    const hasSyncedHistoryRef = useRef(false);
+    const skipNextAutosaveRef = useRef(false);
+
+    useEffect(() => {
+        if (!hasHydratedHistory || hasSyncedHistoryRef.current) return;
+
+        lastSavedCountRef.current = historyMessageCount;
+        setUnsavedMessages([]);
+        setSaveStatus('idle');
+        hasSyncedHistoryRef.current = true;
+        skipNextAutosaveRef.current = true;
+    }, [hasHydratedHistory, historyMessageCount]);
+
+    useEffect(() => {
+        lastSavedCountRef.current = 0;
+        hasSyncedHistoryRef.current = false;
+    }, [playgroundId]);
+
+    // Autosave logic
+    useEffect(() => {
+        if (!hasHydratedHistory || !hasSyncedHistoryRef.current) return;
+        if (!autoSave) return;
+        if (messages.length === 0) {
+            lastSavedCountRef.current = 0;
+            setUnsavedMessages([]);
+            return;
+        }
+
+        if (skipNextAutosaveRef.current) {
+            skipNextAutosaveRef.current = false;
+            return;
+        }
+
+        // Check if there are new messages to save
+        const newMessages = messages.slice(lastSavedCountRef.current);
+        if (newMessages.length === 0) return;
+
+        setUnsavedMessages(newMessages);
+
+        // Clear existing timeout
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+
+        // Debounce autosave by 2 seconds
+        saveTimeoutRef.current = setTimeout(async () => {
+            setSaveStatus('saving');
+            
+            try {
+                const messagesToSave = newMessages.map(msg => ({
+                    role: msg.role as "user" | "model",
+                    content: msg.content
+                }));
+
+                await autosaveChatMessages(messagesToSave,playgroundId);
+                
+                lastSavedCountRef.current = messages.length;
+                setUnsavedMessages([]);
+                setSaveStatus('saved');
+
+                // Reset to idle after 2 seconds
+                setTimeout(() => setSaveStatus('idle'), 2000);
+            } catch (error) {
+                console.error('Autosave error:', error);
+                setSaveStatus('error');
+                
+                // Reset error status after 3 seconds
+                setTimeout(() => setSaveStatus('idle'), 3000);
+            }
+        }, 2000);
+
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, [messages, autoSave, playgroundId, hasHydratedHistory]);
+
     const exportChat = () => {
         const chatData = {
             messages,
@@ -62,34 +154,84 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         URL.revokeObjectURL(url);
     };
 
+    const getAutosaveIndicator = () => {
+        if (!autoSave) return null;
+
+        switch (saveStatus) {
+            case 'saving':
+                return (
+                    <div className="flex items-center gap-2 text-xs text-orange-400 animate-pulse">
+                        <Cloud className="h-3 w-3 animate-pulse" />
+                        <span>Saving...</span>
+                    </div>
+                );
+            case 'saved':
+                return (
+                    <div className="flex items-center gap-2 text-xs text-green-500">
+                        <Check className="h-3 w-3" />
+                        <span>Saved</span>
+                    </div>
+                );
+            case 'error':
+                return (
+                    <div className="flex items-center gap-2 text-xs text-red-500">
+                        <CloudOff className="h-3 w-3" />
+                        <span>Save failed</span>
+                    </div>
+                );
+            default:
+                if (unsavedMessages.length > 0) {
+                    return (
+                        <div className="flex items-center gap-2 text-xs text-orange-500">
+                            <Cloud className="h-3 w-3" />
+                            <span>Pending...</span>
+                        </div>
+                    );
+                }
+                // Show "Connected" when autosave is enabled but idle
+                return (
+                    <div className="flex items-center gap-2 text-xs text-emerald-500/70">
+                        <Cloud className="h-3 w-3" />
+                        <span>Auto-Save On</span>
+                    </div>
+                );
+        }
+    };
+
+    
+
     return (
-        <div className="shrink-0 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-sm">
+        <div className="shrink-0 border-b border-orange-800 bg-white dark:bg-neutral-900/80 backdrop-blur-sm">
             <div className="flex items-center justify-between p-6">
                 <div className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 border rounded-full flex flex-col justify-center items-center">
-                        <Image src={"/logo.svg"} alt="Logo" width={28} height={28} />
+                    <div className="relative flex flex-col justify-center items-center">
+                        <Logo/>
                     </div>
                     <div>
-                        <h2 className="text-lg font-semibold text-zinc-100">
+                        <h2 className="font-mono tracking-wide font-bold text-orange-500 text-2xl">
                             Enhanced AI Assistant
                         </h2>
-                        <p className="text-sm text-zinc-400">
-                            {messages.length} messages
-                        </p>
+                        <div className="flex items-center gap-3">
+                            <p className="text-sm text-orange-400">
+                                {messages.length} messages
+                            </p>
+                            {getAutosaveIndicator()}
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    <AnimatedThemeToggler/>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                                className="text-orange-400 hover:text-orange-500 hover:bg-orange-800"
                             >
                                 <Settings className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
+                        <DropdownMenuContent align="end" className=' font-semibold'>
                             <DropdownMenuCheckboxItem
                                 checked={autoSave}
                                 onCheckedChange={setAutoSave}
@@ -117,7 +259,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                         variant="ghost"
                         size="sm"
                         onClick={onClose}
-                        className="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                        className="h-8 w-8 p-0 text-orange-400 hover:text-orange-500 hover:bg-orange-800"
                     >
                         <X className="h-4 w-4" />
                     </Button>
@@ -131,7 +273,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                 className="px-6"
             >
                 <div className="flex items-center justify-between mb-4">
-                    <TabsList className="grid w-full grid-cols-4 max-w-md">
+                    <TabsList className="grid w-full grid-cols-4 max-w-md bg-orange-700/80 transition-all duration-300 dark:bg-orange-900/50 border border-orange-800 rounded-md">
                         <TabsTrigger value="chat" className="flex items-center gap-1">
                             <MessageSquare className="h-3 w-3" />
                             Chat
@@ -169,9 +311,9 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="sm" className="h-8 w-fit transition-all duration-300 px-2 flex items-center justify-center gap-2">
+                                <Button variant="outline"  className=" transition-all duration-300 px-2 flex items-center justify-center gap-2 border border-orange-800 bg-orange-700/10 hover:bg-orange-700/20 dark:border-orange-900 dark:bg-orange-900/10 dark:hover:bg-orange-900/20">
                                     <Filter className="h-4 w-4 " />
-                                    <span className="text-[13px]">
+                                    <span className="text-[15px] tracking-wide ">
                                         {filterType === "all"
                                             ? "Filter Messages"
                                             : filterType === "chat"
@@ -186,7 +328,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
                                     </span>
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" className='font-semibold'>
                                 <DropdownMenuItem onClick={() => setFilterType("all")}>
                                     All Messages
                                 </DropdownMenuItem>
