@@ -30,14 +30,14 @@ const UserButton = ({ user }: any) => {
         </div>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="mr-4">
-        <DropdownMenuItem>
+      <DropdownMenuContent className="mr-4 dark:bg-black/50 border border-orange-500 backdrop-blur-sm transition-colors grou">
+        <DropdownMenuItem className="font-semibold cursor-default hover:bg-transparent">
           <span>{user?.email}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <LogoutButton>
-          <DropdownMenuItem>
-            <LogOut className="h-4 w-4 mr-2" />
+          <DropdownMenuItem className="hover:bg-orange-800 hover:text-white font-semibold transition-all duration-300 cursor-pointer">
+            <LogOut className="h-4 w-4 mr-2 dark:text-white" />
             LogOut
           </DropdownMenuItem>
         </LogoutButton>
