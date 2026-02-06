@@ -114,6 +114,7 @@ model ChatMessage {
   playgroundId String
   role String
   content String
+  type String?
   createdAt DateTime @default(now())
 
 

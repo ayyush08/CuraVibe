@@ -18,7 +18,7 @@ import React from "react";
 
 const Page = async () => {
   const playgrounds = await getAllPlaygroundForUser();
-  console.log("playgrounds",playgrounds);
+  // console.log("playgrounds",playgrounds);
   
   
   return (

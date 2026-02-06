@@ -21,8 +21,8 @@ import ToggleAI from '@/modules/playground/components/toggle-ai'
 import { useMonacoPilot } from '@/modules/playground/hooks/useMonacoPilot'
 
 // NEW IMPORTS
-import { useRemoteRunner } from '@/modules/remote-runner/hooks/useRemoteRunner'
-import RemoteRunnerPreview from '@/modules/remote-runner/components/remote-runner-preview'
+import { useRemoteRunner } from '@/modules/remote-runner(under testing)/hooks/useRemoteRunner'
+import RemoteRunnerPreview from '@/modules/remote-runner(under testing)/components/remote-runner-preview'
 
 const RemoteRunnerPage = () => {
     const { id } = useParams<{ id: string }>()

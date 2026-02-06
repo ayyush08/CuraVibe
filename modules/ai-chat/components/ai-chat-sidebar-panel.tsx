@@ -45,7 +45,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [autoSave, setAutoSave] = useState(true);
-  const [streamResponse, setStreamResponse] = useState(true);
+  const [streamResponse, setStreamResponse] = useState(false);
   const [streamedContent, setStreamedContent] = useState("");
   const [currentStreamingMessageId, setCurrentStreamingMessageId] = useState<
     string | null
@@ -73,7 +73,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
             content: msg.content,
             id: msg.id,
             timestamp: new Date(msg.createdAt),
-            type: "chat"
+            type: msg.type ?? "chat"
           }));
           setHistoryMessageCount(formattedMessages.length);
           setHasHydratedHistory(true);
@@ -235,7 +235,8 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
             content:
               "Sorry, I encountered an error while processing your request. Please try again.",
             timestamp: new Date(),
-            id: Date.now().toString()
+            id: Date.now().toString(),
+            type: messageType
           }
         ]);
       }
@@ -248,7 +249,8 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
           content:
             "I'm having trouble connecting right now. Please check your internet connection and try again.",
           timestamp: new Date(),
-          id: Date.now().toString()
+          id: Date.now().toString(),
+          type: messageType
         }
       ]);
     } finally {

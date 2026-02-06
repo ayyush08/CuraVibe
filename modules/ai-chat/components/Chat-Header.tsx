@@ -109,7 +109,8 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             try {
                 const messagesToSave = newMessages.map(msg => ({
                     role: msg.role as "user" | "model",
-                    content: msg.content
+                    content: msg.content,
+                    type: msg.type
                 }));
 
                 await autosaveChatMessages(messagesToSave,playgroundId);
@@ -269,7 +270,19 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
             {/* Enhanced Controls */}
             <Tabs
                 value={chatMode}
-                onValueChange={(value) => setChatMode(value as any)}
+                onValueChange={(value) => {
+                    const nextMode = value as "chat" | "review" | "fix" | "optimize";
+                    setChatMode(nextMode);
+                    setFilterType(
+                        nextMode === "chat"
+                            ? "chat"
+                            : nextMode === "review"
+                            ? "code_review"
+                            : nextMode === "fix"
+                            ? "error_fix"
+                            : "optimization"
+                    );
+                }}
                 className="px-6"
             >
                 <div className="flex items-center justify-between mb-4">

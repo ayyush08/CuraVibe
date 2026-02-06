@@ -38,7 +38,7 @@ const SignInFormClient = () => {
                 <form action={handleGoogleSignIn} className="w-full">
                     <Button 
                         type="submit" 
-                        className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 dark:from-orange-500 dark:to-orange-400 dark:hover:from-orange-600 dark:hover:to-orange-500 text-white font-semibold py-6 transition-all duration-200 shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40"
+                        className="w-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-700 hover:to-orange-600 dark:from-orange-500 cursor-pointer dark:to-orange-400 dark:hover:from-orange-600 dark:hover:to-orange-500 text-white font-semibold py-6 transition-all duration-200 shadow-lg shadow-orange-500/30 hover:shadow-xl hover:shadow-orange-500/40"
                     >
                         <Chrome className="mr-3 h-5 w-5" />
                         <span>Continue with Google</span>
@@ -57,7 +57,7 @@ const SignInFormClient = () => {
                 <form action={handleGithubSignIn} className="w-full">
                     <Button 
                         type="submit" 
-                        className="w-full bg-white/90 hover:bg-orange-50 dark:bg-black/90 dark:hover:bg-zinc-900 text-orange-600 dark:text-orange-400 border-2 border-orange-600 dark:border-orange-500 font-semibold py-6 transition-all duration-200 backdrop-blur-sm hover:border-orange-700 dark:hover:border-orange-400"
+                        className="w-full bg-white/90 hover:bg-orange-50 cursor-pointer dark:bg-black/90 dark:hover:bg-zinc-900 text-orange-600 dark:text-orange-400 border-2 border-orange-600 dark:border-orange-500 font-semibold py-6 transition-all duration-200 backdrop-blur-sm hover:border-orange-700 dark:hover:border-orange-400"
                     >
                         <Github className="mr-3 h-5 w-5" />
                         <span>Continue with GitHub</span>
