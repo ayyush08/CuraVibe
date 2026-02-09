@@ -4,6 +4,8 @@ import { templatePaths } from "@/lib/template";
 import path from "path";
 import { NextRequest } from "next/server";
 
+export const dynamic = 'force-dynamic'; // Ensure fresh data on each request
+
 function validateJsonStructure(data: unknown): boolean {
     try {
         JSON.parse(JSON.stringify(data)); // Ensures it's serializable
@@ -42,10 +44,11 @@ export async function GET(
 
     try {
         const inputPath = path.join(process.cwd(), templatePath);
-        console.log("Scanning template path:", inputPath);
+        console.log("[Template API] Scanning template path:", inputPath);
+        console.log("[Template API] Template key:", templateKey);
         
-        // Directly scan the template directory without writing to file
-        // This works in production environments where filesystem is read-only
+        // Directly scan the directory without writing to filesystem
+        // This works in production (Vercel/serverless) where filesystem is read-only
         const result = await scanTemplateDirectory(inputPath, {
             ignoreFiles: [
                 'package-lock.json',
@@ -59,7 +62,8 @@ export async function GET(
                 '.env',
                 '.env.local',
                 '.env.development',
-                '.env.production'
+                '.env.production',
+                '.env.test'
             ],
             ignoreFolders: [
                 'node_modules',
@@ -69,10 +73,13 @@ export async function GET(
                 'dist',
                 'build',
                 'coverage',
-                '.next'
+                '.next',
+                'output'
             ],
-            maxFileSize: 1024 * 1024 // 1MB
+            maxFileSize: 1024 * 1024 // 1MB max file size
         });
+
+        console.log("[Template API] Successfully scanned template with", result.items.length, "items");
 
         // Validate the JSON structure before returning
         if (!validateJsonStructure(result.items)) {
@@ -81,10 +88,14 @@ export async function GET(
 
         return Response.json({ success: true, templateJson: result }, { status: 200 });
     } catch (error) {
-        console.error("Error generating template JSON:", error);
+        console.error("[Template API] Error generating template JSON:", error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error("[Template API] Error details:", errorMessage);
+        
         return Response.json({ 
-            error: "Failed to generate template", 
-            details: error instanceof Error ? error.message : String(error) 
+            error: "Failed to generate template",
+            details: errorMessage,
+            templatePath: templatePath
         }, { status: 500 });
     }
 
