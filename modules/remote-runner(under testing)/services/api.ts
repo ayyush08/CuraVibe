@@ -10,7 +10,8 @@ export interface RunnerAPI {
     updateSession(sessionId: string, files: TemplateFolder): Promise<void>;
 }
 
-const RUNNER_SERVICE_URL = "https://curavibe-runner-service.onrender.com";
+// const RUNNER_SERVICE_URL = "https://curavibe-runner-service.onrender.com";
+const RUNNER_SERVICE_URL = "http://localhost:9000";
 
 export const RemoteRunnerAPI: RunnerAPI = {
     async startSession(files: TemplateFolder): Promise<RunnerSession> {

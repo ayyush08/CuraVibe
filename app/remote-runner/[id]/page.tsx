@@ -396,6 +396,7 @@ const RemoteRunnerPage = () => {
                                 </Tooltip>
 
                                 <ToggleAI
+                                    playgroundId={id}
                                     isEnabled={aiSuggestions.isPilotEnabled}
                                     onToggle={aiSuggestions.toggleEnabled}
                                     suggestionLoading={aiSuggestions.isPilotEnabled}
