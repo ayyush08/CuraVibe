@@ -21,14 +21,25 @@ interface NewFileDialogProps {
 
 function NewFileDialog({ isOpen, onClose, onCreateFile }: NewFileDialogProps) {
   const [filename, setFilename] = React.useState("");
-  const [extension, setExtension] = React.useState("js");
+  const [extension, setExtension] = React.useState("ts");
+
+  const commonExtensions = [
+    { value: "ts", label: "TypeScript (.ts)" },
+    { value: "tsx", label: "TypeScript React (.tsx)" },
+    { value: "js", label: "JavaScript (.js)" },
+    { value: "jsx", label: "JavaScript React (.jsx)" },
+    { value: "json", label: "JSON (.json)" },
+    { value: "css", label: "CSS (.css)" },
+    { value: "html", label: "HTML (.html)" },
+    { value: "md", label: "Markdown (.md)" },
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (filename.trim()) {
-      onCreateFile(filename.trim(), extension.trim() || "js");
+      onCreateFile(filename.trim(), extension.trim() || "ts");
       setFilename("");
-      setExtension("js");
+      setExtension("ts");
     }
   };
 
@@ -58,15 +69,20 @@ function NewFileDialog({ isOpen, onClose, onCreateFile }: NewFileDialogProps) {
             </div>
             <div className="grid grid-cols-3 items-center gap-4">
               <Label htmlFor="extension" className="text-right">
-                Extension
+                Type
               </Label>
-              <Input
+              <select
                 id="extension"
                 value={extension}
                 onChange={(e) => setExtension(e.target.value)}
-                className="col-span-2"
-                placeholder="js"
-              />
+                className="col-span-2 flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {commonExtensions.map((ext) => (
+                  <option key={ext.value} value={ext.value}>
+                    {ext.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <DialogFooter>

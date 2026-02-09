@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import Editor, { type Monaco } from "@monaco-editor/react";
+import { FileText } from "lucide-react";
 import { TemplateFile } from "../lib/path-to-json";
 import { configureMonaco, defaultEditorOptions, getEditorLanguage } from "../lib/editor-config";
 
@@ -75,8 +76,29 @@ export const PlaygroundEditor = ({
         });
     };
 
+    // Debug: Log the language detection
+    const detectedLanguage = activeFile ? getEditorLanguage(activeFile.fileExtension || "") : "plaintext";
+    
+    useEffect(() => {
+        if (activeFile) {
+            console.log('[Editor Debug] File:', activeFile.filename);
+            console.log('[Editor Debug] Extension:', activeFile.fileExtension);
+            console.log('[Editor Debug] Extension (JSON):', JSON.stringify(activeFile.fileExtension));
+            console.log('[Editor Debug] Extension length:', activeFile.fileExtension?.length);
+            console.log('[Editor Debug] Detected Language:', detectedLanguage);
+        }
+    }, [activeFile, detectedLanguage]);
+
     return (
         <div className="h-full relative">
+            {/* Language indicator */}
+            {activeFile && (
+                <div className="absolute top-2 left-2 z-10 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded text-xs text-gray-700 dark:text-gray-300 flex items-center gap-1 border border-gray-300 dark:border-gray-600">
+                    <FileText className="w-3 h-3" />
+                    {activeFile.filename}.{activeFile.fileExtension} ({detectedLanguage})
+                </div>
+            )}
+            
             {aiEnabled && suggestionLoading && (
                 <div className="absolute top-2 right-2 z-10 bg-red-100 dark:bg-red-900 px-2 py-1 rounded text-xs text-red-700 dark:text-red-300 flex items-center gap-1">
                     <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
@@ -104,7 +126,7 @@ export const PlaygroundEditor = ({
                 value={content}
                 onChange={(value) => onContentChange(value || "")}
                 onMount={handleEditorDidMount}
-                language={activeFile ? getEditorLanguage(activeFile.fileExtension || "") : "plaintext"}
+                language={detectedLanguage}
                 //@ts-ignore
                 options={defaultEditorOptions}
             />

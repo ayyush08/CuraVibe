@@ -260,6 +260,39 @@ export const configureMonaco = (monaco: Monaco) => {
         allowJs: true,
         typeRoots: ["node_modules/@types"],
     });
+
+    // Add common type definitions for better IntelliSense
+    // This improves TypeScript support in the editor
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(
+        `
+        declare module 'react' {
+            export = React;
+            export as namespace React;
+            namespace React {
+                type ReactNode = any;
+                type FC<P = {}> = (props: P) => ReactElement | null;
+                interface ReactElement<P = any> { type: any; props: P; }
+                function useState<T>(initialState: T | (() => T)): [T, (value: T | ((prevState: T) => T)) => void];
+                function useEffect(effect: () => void | (() => void), deps?: any[]): void;
+                function useRef<T>(initialValue: T): { current: T };
+                function useCallback<T extends Function>(callback: T, deps: any[]): T;
+                function useMemo<T>(factory: () => T, deps: any[]): T;
+            }
+        }
+        `,
+        'ts:filename/react.d.ts'
+    );
+
+    monaco.languages.typescript.javascriptDefaults.addExtraLib(
+        `
+        declare module 'react' {
+            export function useState(initialState: any): [any, (value: any) => void];
+            export function useEffect(effect: () => void | (() => void), deps?: any[]): void;
+            export function useRef(initialValue: any): { current: any };
+        }
+        `,
+        'js:filename/react.d.ts'
+    );
 };
 
 export const defaultEditorOptions = {

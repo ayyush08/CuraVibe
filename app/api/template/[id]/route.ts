@@ -1,11 +1,7 @@
-import {
-    readTemplateStructureFromJson,
-    saveTemplateStructureToJson,
-} from "@/modules/playground/lib/path-to-json";
+import { scanTemplateDirectory } from "@/modules/playground/lib/path-to-json";
 import { db } from "@/lib/db";
 import { templatePaths } from "@/lib/template";
 import path from "path";
-import fs from "fs/promises";
 import { NextRequest } from "next/server";
 
 function validateJsonStructure(data: unknown): boolean {
@@ -46,27 +42,50 @@ export async function GET(
 
     try {
         const inputPath = path.join(process.cwd(), templatePath);
-        const outputFile = path.join(process.cwd(), `output/${templateKey}.json`);
-        console.log("input path",inputPath);
-        console.log("output path",outputFile);
+        console.log("Scanning template path:", inputPath);
         
-        
-        await saveTemplateStructureToJson(inputPath, outputFile);
-        const result = await readTemplateStructureFromJson(outputFile);
+        // Directly scan the template directory without writing to file
+        // This works in production environments where filesystem is read-only
+        const result = await scanTemplateDirectory(inputPath, {
+            ignoreFiles: [
+                'package-lock.json',
+                'yarn.lock',
+                'pnpm-lock.yaml',
+                '.DS_Store',
+                'thumbs.db',
+                '.gitignore',
+                '.npmrc',
+                '.yarnrc',
+                '.env',
+                '.env.local',
+                '.env.development',
+                '.env.production'
+            ],
+            ignoreFolders: [
+                'node_modules',
+                '.git',
+                '.vscode',
+                '.idea',
+                'dist',
+                'build',
+                'coverage',
+                '.next'
+            ],
+            maxFileSize: 1024 * 1024 // 1MB
+        });
 
-
-        // Validate the JSON structure before saving
+        // Validate the JSON structure before returning
         if (!validateJsonStructure(result.items)) {
             return Response.json({ error: "Invalid JSON structure" }, { status: 500 });
         }
 
-        await fs.unlink(outputFile)
-
-
         return Response.json({ success: true, templateJson: result }, { status: 200 });
     } catch (error) {
         console.error("Error generating template JSON:", error);
-        return Response.json({ error: "Failed to generate template" }, { status: 500 });
+        return Response.json({ 
+            error: "Failed to generate template", 
+            details: error instanceof Error ? error.message : String(error) 
+        }, { status: 500 });
     }
 
 
