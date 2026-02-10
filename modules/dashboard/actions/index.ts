@@ -59,6 +59,9 @@ export const getAllPlaygroundForUser = async () => {
                         userId: user?.id
                     },
                 }
+            },
+            orderBy:{
+                createdAt: 'desc'
             }
         })
         return playgrounds
