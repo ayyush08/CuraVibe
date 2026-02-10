@@ -53,7 +53,7 @@ export const useWebContainer = ({ templateData }: UseWebContainerProps): UseWebC
         };
 
 
-    }, [])
+    }, [instance])
 
 
 

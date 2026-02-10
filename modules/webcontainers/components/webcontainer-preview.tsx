@@ -17,6 +17,7 @@ interface WebContainerPreviewProps {
     error: string | null;
     instance: WebContainer | null;
     writeFileSync: (path: string, content: string) => Promise<void>;
+    playgroundId: string;
     forceResetup?: boolean; // Optional prop to force re-setup
 }
 const WebContainerPreview = ({
@@ -26,6 +27,7 @@ const WebContainerPreview = ({
     isLoading,
     serverUrl,
     writeFileSync,
+    playgroundId,
     forceResetup = false,
 }: WebContainerPreviewProps) => {
     const [previewUrl, setPreviewUrl] = useState<string>("");
@@ -43,6 +45,22 @@ const WebContainerPreview = ({
     const [isSetupInProgress, setIsSetupInProgress] = useState(false);
 
     const terminalRef = useRef<any>(null);
+
+    // Reset setup state when playground changes
+    useEffect(() => {
+        setIsSetupComplete(false);
+        setIsSetupInProgress(false);
+        setPreviewUrl("");
+        setCurrentStep(0);
+        setSetupError(null);
+        setLoadingState({
+            transforming: false,
+            mounting: false,
+            installing: false,
+            starting: false,
+            ready: false,
+        });
+    }, [playgroundId]);
 
     // Reset setup state when forceResetup changes
     useEffect(() => {
@@ -68,41 +86,6 @@ const WebContainerPreview = ({
             try {
                 setIsSetupInProgress(true);
                 setSetupError(null);
-
-                try {
-                    const packageJsonExists = await instance.fs.readFile(
-                        "package.json",
-                        "utf8"
-                    );
-
-                    if (packageJsonExists) {
-                        // Files are already mounted, just reconnect to existing server
-                        if (terminalRef.current?.writeToTerminal) {
-                            terminalRef.current.writeToTerminal(
-                                "🔄 Reconnecting to existing WebContainer session...\r\n"
-                            );
-                        }
-
-                        instance.on("server-ready", (port: number, url: string) => {
-                            if (terminalRef.current?.writeToTerminal) {
-                                terminalRef.current.writeToTerminal(
-                                    `🌐 Reconnected to server at ${url}\r\n`
-                                );
-                            }
-
-                            setPreviewUrl(url);
-                            setLoadingState((prev) => ({
-                                ...prev,
-                                starting: false,
-                                ready: true,
-                            }));
-                        });
-
-                        setCurrentStep(4);
-                        setLoadingState((prev) => ({ ...prev, starting: true }));
-                        return;
-                    }
-                } catch (error) { }
 
                 // Step-1 transform data
                 setLoadingState((prev) => ({ ...prev, transforming: true }));

@@ -31,6 +31,7 @@ interface FileExplorerState {
     openFile: (file: TemplateFile) => void
     closeFile: (fileId: string) => void
     closeAllFiles: () => void
+    resetState: () => void
 
 
     //File Explorer methods
@@ -460,6 +461,15 @@ export const useFileExplorer = create<FileExplorerState>((set, get) => ({
             editorContent:
                 fileId === state.activeFileId ? content : state.editorContent,
         }));
+    },
+
+    resetState: () => {
+        set({
+            templateData: null,
+            openFiles: [],
+            activeFileId: null,
+            editorContent: '',
+        });
     },
 }
 ))

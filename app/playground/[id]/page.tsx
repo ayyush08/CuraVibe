@@ -42,6 +42,7 @@ const MainPlaygroundPage = () => {
         closeFile,
         openFile,
         openFiles,
+        resetState,
 
         handleAddFile,
         handleAddFolder,
@@ -65,14 +66,17 @@ const MainPlaygroundPage = () => {
 
     const lastSyncedContent = useRef<Map<string, string>>(new Map());
 
+    // Reset state when playground ID changes
     useEffect(() => {
-        setPlaygroundId(id)
-    }, [id, setPlaygroundId])
+        resetState();
+        setPlaygroundId(id);
+    }, [id, setPlaygroundId, resetState]);
+
     useEffect(() => {
-        if (templateData && !openFiles.length) {
+        if (templateData) {
             setTemplateData(templateData)
         }
-    }, [templateData, setTemplateData, openFiles.length])
+    }, [templateData, setTemplateData])
 
     const wrappedHandleAddFile = useCallback(
         (newFile: TemplateFile, parentPath: string) => {
@@ -506,6 +510,7 @@ const MainPlaygroundPage = () => {
                                                                 isLoading={isLoading}
                                                                 error={error}
                                                                 serverUrl={serverUrl!}
+                                                                playgroundId={id}
                                                                 forceResetup={false}
                                                             />
                                                         </ResizablePanel>

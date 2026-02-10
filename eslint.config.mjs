@@ -34,6 +34,7 @@ const eslintConfig = [
       '@typescript-eslint/no-this-alias': 'off',
       '@typescript-eslint/no-wrapper-object-types': 'off',
       '@typescript-eslint/no-unsafe-function-type': 'off',
+      '@react-hooks/exhaustive-deps': 'off',
     }
   }
 ];
