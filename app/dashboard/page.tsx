@@ -42,6 +42,9 @@ const Page = async () => {
         <AddNewButton />
         <AddRepo />
       </div>
+      {/* <p className="my-4  text-red-500 font-semibold text-lg mx-auto p-5 text-center">
+        NOTE: NEXT.JS projects are not compiling in webcontainer yet, we are working on it. In the meantime, you can try out other templates like React. Thank you for your understanding!
+      </p> */}
       <div className="mt-10 flex flex-col justify-center items-center w-full p-10">
         {playgrounds && playgrounds.length == 0 ? (
           <EmptyState />

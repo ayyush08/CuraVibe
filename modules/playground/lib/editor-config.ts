@@ -19,6 +19,7 @@ export const getEditorLanguage = (fileExtension: string): string => {
         scss: "scss",
         sass: "scss",
         less: "less",
+        vue: "vue",
 
         // Markup/Documentation
         md: "markdown",
@@ -53,6 +54,117 @@ export const getEditorLanguage = (fileExtension: string): string => {
 };
 
 export const configureMonaco = (monaco: Monaco) => {
+    // Register Vue language
+    if (!monaco.languages.getLanguages().some((lang) => lang.id === "vue")) {
+        monaco.languages.register({ id: "vue" });
+        
+        // Vue tokenizer - provides basic syntax highlighting
+        monaco.languages.setMonarchTokensProvider("vue", {
+            tokenizer: {
+                root: [
+                    // HTML tags
+                    [/<\/?[a-zA-Z][a-zA-Z0-9-]*\s*\/?>/i, "tag"],
+                    [/<[a-zA-Z][a-zA-Z0-9-]*/, "tag"],
+                    [/>/, "tag"],
+                    
+                    // Script and style tags
+                    [/<(script|style)(?:\s|>)/, { token: "tag", next: "@script" }],
+                    [/<\/(script|style)>/, "tag"],
+                    
+                    // HTML attributes
+                    [/[a-zA-Z_-][a-zA-Z0-9_-]*=/, "attribute.name"],
+                    [/"[^"]*"/, "string"],
+                    [/'[^']*'/, "string"],
+                    
+                    // Comments
+                    [/<!--/, "comment", "@comment"],
+                    [/{{.*?}}/, "variable"],
+                    [/:[a-zA-Z-]+/, "variable"],
+                    [/@[a-zA-Z-]+/, "variable"],
+                    
+                    // Text
+                    [/[^<>{]+/, "text"],
+                    [/./, "text"],
+                ],
+                comment: [
+                    [/-->/, "comment", "@pop"],
+                    [/./, "comment"],
+                ],
+                script: [
+                    [/<\/script>/, { token: "tag", next: "@pop" }],
+                    [/<\/style>/, { token: "tag", next: "@pop" }],
+                    // JavaScript/CSS content
+                    [/\/\/.*?$/, "comment"],
+                    [/\/\*/, "comment", "@blockComment"],
+                    [/"([^"\\]|\\.)*"/, "string"],
+                    [/'([^'\\]|\\.)*'/, "string"],
+                    [/`([^`\\]|\\.)*`/, "string"],
+                    [/\d+/, "number"],
+                    [/[a-zA-Z_$][a-zA-Z0-9_$]*/, "identifier"],
+                    [/./, "text"],
+                ],
+                blockComment: [
+                    [/\*\//, "comment", "@pop"],
+                    [/./, "comment"],
+                ]
+            }
+        } as any);
+
+        // Vue completion items
+        monaco.languages.registerCompletionItemProvider("vue", {
+            provideCompletionItems: () => {
+                return {
+                    suggestions: [
+                        {
+                            label: "template",
+                            kind: monaco.languages.CompletionItemKind.Keyword,
+                            insertText: "<template>\n\t$0\n</template>",
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            documentation: "Vue template block",
+                        },
+                        {
+                            label: "script",
+                            kind: monaco.languages.CompletionItemKind.Keyword,
+                            insertText: '<script setup lang="ts">\n\t$0\n</script>',
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            documentation: "Vue script block",
+                        },
+                        {
+                            label: "style",
+                            kind: monaco.languages.CompletionItemKind.Keyword,
+                            insertText: '<style scoped>\n\t$0\n</style>',
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                            documentation: "Vue style block",
+                        },
+                        {
+                            label: "v-if",
+                            kind: monaco.languages.CompletionItemKind.Keyword,
+                            insertText: 'v-if="$1"',
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        },
+                        {
+                            label: "v-for",
+                            kind: monaco.languages.CompletionItemKind.Keyword,
+                            insertText: 'v-for="item in items" :key="item"',
+                        },
+                        {
+                            label: "v-bind",
+                            kind: monaco.languages.CompletionItemKind.Keyword,
+                            insertText: 'v-bind="$1"',
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        },
+                        {
+                            label: "v-on",
+                            kind: monaco.languages.CompletionItemKind.Keyword,
+                            insertText: 'v-on:$1="$2"',
+                            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        },
+                    ]
+                };
+            }
+        } as any);
+    }
+
     // Define a beautiful modern dark theme
     monaco.editor.defineTheme("modern-dark", {
         base: "vs-dark",

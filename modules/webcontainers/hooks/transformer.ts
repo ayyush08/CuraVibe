@@ -20,6 +20,33 @@ interface WebContainerDirectory {
 
 type WebContainerFileSystem = Record<string, WebContainerFile | WebContainerDirectory>;
 
+/**
+ * Removes --turbopack flag from npm scripts in package.json
+ * WebContainers don't support Turbopack compilation yet
+ */
+function removeTurbopackFromScripts(packageJsonContent: string): string {
+    try {
+        const pkg = JSON.parse(packageJsonContent);
+        
+        if (pkg.scripts && typeof pkg.scripts === 'object') {
+            Object.keys(pkg.scripts).forEach(scriptName => {
+                if (typeof pkg.scripts[scriptName] === 'string') {
+                    // Remove --turbopack flag from all scripts
+                    pkg.scripts[scriptName] = pkg.scripts[scriptName]
+                        .replace(/\s*--turbopack\s*/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                }
+            });
+        }
+        
+        return JSON.stringify(pkg, null, 2);
+    } catch (error) {
+        // If it's not valid JSON, return original content
+        return packageJsonContent;
+    }
+}
+
 export function transformToWebContainerFormat(template: { folderName: string; items: TemplateItem[] }): WebContainerFileSystem {
     function processItem(item: TemplateItem): WebContainerFile | WebContainerDirectory {
         if (item.folderName && item.items) {
@@ -37,10 +64,16 @@ export function transformToWebContainerFormat(template: { folderName: string; it
                 directory: directoryContents
             };
         } else {
-            // This is a file
+            // This is a file - check if it's package.json and needs transformation
+            let content = item.content;
+            
+            if (item.filename === 'package' && item.fileExtension === 'json') {
+                content = removeTurbopackFromScripts(content);
+            }
+            
             return {
                 file: {
-                    contents: item.content
+                    contents: content
                 }
             };
         }
